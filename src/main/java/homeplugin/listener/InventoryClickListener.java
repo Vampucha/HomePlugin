@@ -32,7 +32,7 @@ public class InventoryClickListener implements Listener {
                 if (e.getCurrentItem() != null) {
 
                     // close
-                    if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eClose")) {
+                    if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eClose")) {
                         p.closeInventory();
                     }
 
@@ -40,12 +40,12 @@ public class InventoryClickListener implements Listener {
                     else if (e.getView().getTitle().equals("Settings")) {
 
                         // back
-                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eBack")) {
+                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eBack")) {
                             Inventories.openHomeList(p, p);
                         }
 
                         // show information
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eShow information")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eShow information")) {
 
                             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation"))
                                 cfg.set("Players." + p.getUniqueId() + ".Settings.ShowInformation", false);
@@ -55,7 +55,7 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // delete protection
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eDelete protection")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eDelete protection")) {
 
                             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection"))
                                 cfg.set("Players." + p.getUniqueId() + ".Settings.DeleteProtection", false);
@@ -65,7 +65,7 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // orientation
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eOrientation")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eOrientation")) {
 
                             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.Orientation"))
                                 cfg.set("Players." + p.getUniqueId() + ".Settings.Orientation", false);
@@ -75,7 +75,7 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // visitors
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eVisitors")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eVisitors")) {
 
                             // left
                             if (e.getClick() == ClickType.LEFT) {
@@ -108,7 +108,7 @@ public class InventoryClickListener implements Listener {
                         if (Main.lastGui.get(p).equals("Whitelist")) {
 
                             // no
-                            if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo"))
+                            if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo"))
                                 Inventories.openWhitelist(p);
 
                         }
@@ -117,26 +117,26 @@ public class InventoryClickListener implements Listener {
                         else if (Main.lastGui.get(p).equals("Blacklist")) {
 
                             // no
-                            if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo"))
+                            if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo"))
                                 Inventories.openWhitelist(p);
 
                         }
 
                         // yes
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§aYes")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§aYes")) {
                             Home home = Main.currentHome.get(p);
                             home.delete();
 
                             if (Main.lastGui.get(p) == null) {
                                 p.closeInventory();
-                                p.sendMessage(Main.prefix + "§aYou successfully deleted the home §6" + home.getName());
+                                p.sendMessage(Main.prefix + "Â§aYou successfully deleted the home Â§6" + home.getName());
                             } else if (Main.lastGui.get(p).equals("Homes of " + p.getName()) || Main.lastGui.get(p).equals(Main.currentHome.get(p).getName())) {
                                 Inventories.openHomeList(p, p);
                             }
                         }
 
                         // no
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo")) {
 
                             if (Main.lastGui.get(p) == null)
                                 p.closeInventory();
@@ -151,25 +151,25 @@ public class InventoryClickListener implements Listener {
                     else if (e.getView().getTitle().equals("Choose icon")) {
 
                         // next page
-                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eNext page")) {
+                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eNext page")) {
                             Main.page.put(p, Main.page.get(p) + 1);
                             Inventories.openIconList(p);
                         }
 
                         // previous page
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§ePrevious page")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§ePrevious page")) {
                             Main.page.put(p, Main.page.get(p) - 1);
                             Inventories.openIconList(p);
                         }
 
                         // back
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eBack")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eBack")) {
                             Main.page.put(p, 1);
                             Inventories.openInventory(InventoryType.HOME, p);
                         }
 
                         // sorting
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSorting")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eSorting")) {
 
                             // type
                             if (e.getClick() == ClickType.LEFT) {
@@ -210,7 +210,7 @@ public class InventoryClickListener implements Listener {
                             home.setIcon(e.getCurrentItem());
                             if (Main.lastGui.get(p) == null) {
                                 p.closeInventory();
-                                p.sendMessage(Main.prefix + "§aYou successfully changed the icon to §6"
+                                p.sendMessage(Main.prefix + "Â§aYou successfully changed the icon to Â§6"
                                         + home.getIcon().getType().toString().toLowerCase().replaceAll("_", " "));
                             } else if (Main.lastGui.get(p).equals(home.getName())) {
                                 Inventories.openInventory(InventoryType.HOME, p);
@@ -223,20 +223,20 @@ public class InventoryClickListener implements Listener {
                     else if (e.getView().getTitle().equals("Whitelist")) {
 
                         // back
-                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eBack")) {
+                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eBack")) {
                             Main.page.put(p, 1);
                             Inventories.openInventory(InventoryType.SETTINGS, p);
                         }
 
                         // add
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eAdd")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eAdd")) {
                             Main.page.put(p, 1);
                             Main.lastGui.put(p, e.getView().getTitle());
                             Inventories.openPlayerList(p);
                         }
 
                         // sorting
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSorting")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eSorting")) {
 
                             // type
                             if (e.getClick() == ClickType.LEFT) {
@@ -272,7 +272,7 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // no players
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo players on the whitelist")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo players on the whitelist")) {
                             e.setCancelled(true);
                         }
 
@@ -283,7 +283,7 @@ public class InventoryClickListener implements Listener {
                                 Inventories.openInventory(InventoryType.DELETE, p);
                             } else {
                                 ArrayList<String> whitelist = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".Settings.Visitors.Whitelist"));
-                                whitelist.remove(e.getCurrentItem().getItemMeta().getDisplayName().replace("§a", ""));
+                                whitelist.remove(e.getCurrentItem().getItemMeta().getDisplayName().replace("Â§a", ""));
                                 cfg.set("Players." + p.getUniqueId() + ".Settings.Visitors.Whitelist", whitelist);
                                 Main.getPlugin().saveConfig();
                                 Inventories.openWhitelist(p);
@@ -295,20 +295,20 @@ public class InventoryClickListener implements Listener {
                     else if (e.getView().getTitle().equals("Blacklist")) {
 
                         // back
-                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eBack")) {
+                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eBack")) {
                             Main.page.put(p, 1);
                             Inventories.openInventory(InventoryType.SETTINGS, p);
                         }
 
                         // add
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eAdd")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eAdd")) {
                             Main.page.put(p, 1);
                             Main.lastGui.put(p, e.getView().getTitle());
                             Inventories.openPlayerList(p);
                         }
 
                         // sorting
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSorting")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eSorting")) {
 
                             // type
                             if (e.getClick() == ClickType.LEFT) {
@@ -344,7 +344,7 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // no players
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo players on the blacklist")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo players on the blacklist")) {
                             e.setCancelled(true);
                         }
 
@@ -355,7 +355,7 @@ public class InventoryClickListener implements Listener {
                                 Inventories.openInventory(InventoryType.DELETE, p);
                             } else {
                                 ArrayList<String> blacklist = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".Settings.Visitors.Blacklist"));
-                                blacklist.remove(e.getCurrentItem().getItemMeta().getDisplayName().replace("§a", ""));
+                                blacklist.remove(e.getCurrentItem().getItemMeta().getDisplayName().replace("Â§a", ""));
                                 cfg.set("Players." + p.getUniqueId() + ".Settings.Visitors.Blacklist", blacklist);
                                 Main.getPlugin().saveConfig();
                                 Inventories.openBlacklist(p);
@@ -367,20 +367,20 @@ public class InventoryClickListener implements Listener {
                     else if (e.getView().getTitle().equals("Choose player")) {
 
                         // back
-                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eBack")) {
+                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eBack")) {
                             Main.page.put(p, 1);
                             if (Main.lastGui.get(p).equals("Whitelist")) Inventories.openWhitelist(p);
                             else if (Main.lastGui.get(p).equals("Blacklist")) Inventories.openBlacklist(p);
                         }
 
                         // no players
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo players online")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo players online")) {
                             e.setCancelled(true);
                         }
 
                         // player
                         else {
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("Â§a", "");
 
                             // blacklist
                             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.Visitors.Enabled")) {
@@ -391,7 +391,7 @@ public class InventoryClickListener implements Listener {
                                 Main.getPlugin().saveConfig();
                                 if (Main.lastGui.get(p) == null) {
                                     p.closeInventory();
-                                    p.sendMessage(Main.prefix + "§aYou successfully added §6" + name);
+                                    p.sendMessage(Main.prefix + "Â§aYou successfully added Â§6" + name);
                                 } else if (Main.lastGui.get(p).equals("Blacklist")) {
                                     Inventories.openBlacklist(p);
                                 }
@@ -406,7 +406,7 @@ public class InventoryClickListener implements Listener {
                                 Main.getPlugin().saveConfig();
                                 if (Main.lastGui.get(p) == null) {
                                     p.closeInventory();
-                                    p.sendMessage(Main.prefix + "§aYou successfully added §6" + name);
+                                    p.sendMessage(Main.prefix + "Â§aYou successfully added Â§6" + name);
                                 } else if (Main.lastGui.get(p).equals("Whitelist")) {
                                     Inventories.openWhitelist(p);
                                 }
@@ -416,12 +416,12 @@ public class InventoryClickListener implements Listener {
                     } else {
 
                         // back
-                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eBack")) {
+                        if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eBack")) {
                             Inventories.openHomeList(p, p);
                         }
 
                         // delete
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cDelete")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cDelete")) {
 
                             String name = e.getView().getTitle();
                             Home home = new Home(name, p);
@@ -437,13 +437,13 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // name
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eName")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eName")) {
 
                             AnvilGUI.Builder builder = new AnvilGUI.Builder();
 
                             ItemStack paper = new ItemStack(Material.PAPER);
                             ItemMeta paperMeta = paper.getItemMeta();
-                            paperMeta.setDisplayName("§aRename me!");
+                            paperMeta.setDisplayName("Â§aRename me!");
                             paper.setItemMeta(paperMeta);
 
                             builder.itemLeft(paper);
@@ -462,31 +462,31 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // icon
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eIcon")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eIcon")) {
                             Main.page.put(p, 1);
                             Inventories.openIconList(p);
                         }
 
                         // next page
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eNext page")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eNext page")) {
                             Main.page.put(p, Main.page.get(p) + 1);
                             Inventories.openHomeList(p, p);
                         }
 
                         // previous page
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§ePrevious page")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§ePrevious page")) {
                             Main.page.put(p, Main.page.get(p) - 1);
                             Inventories.openHomeList(p, p);
                         }
 
                         // settings
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSettings")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eSettings")) {
                             Main.lastGui.put(p, e.getView().getTitle());
                             Inventories.openInventory(InventoryType.SETTINGS, p);
                         }
 
                         // sorting
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSorting")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eSorting")) {
 
                             // type
                             if (e.getClick() == ClickType.LEFT) {
@@ -522,7 +522,7 @@ public class InventoryClickListener implements Listener {
                         }
 
                         // no homes
-                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo homes")) {
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo homes")) {
 
                             e.setCancelled(true);
                         }
@@ -532,7 +532,7 @@ public class InventoryClickListener implements Listener {
 
                             String visit_success = cfg.getString("Settings.ChatMessages.Visit.Success");
 
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("Â§a", "");
                             Home home = new Home(name, p);
 
                             if (home.isExisting()) {
@@ -544,9 +544,9 @@ public class InventoryClickListener implements Listener {
                         // right-click
                         else if (e.getClick() == ClickType.RIGHT) {
 
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("Â§a", "");
                             Home home = new Home(name, p);
-                            Main.lastGui.put(p, e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", ""));
+                            Main.lastGui.put(p, e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("Â§a", ""));
                             Main.currentHome.put(p, home);
                             Inventories.openInventory(InventoryType.HOME, p);
                         }
@@ -554,7 +554,7 @@ public class InventoryClickListener implements Listener {
                         // middle-click
                         else if (e.getClick() == ClickType.MIDDLE) {
 
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("Â§a", "");
                             Home home = new Home(name, p);
 
                             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
@@ -575,25 +575,25 @@ public class InventoryClickListener implements Listener {
                     Player target = (Player) e.getInventory().getHolder();
 
                     // next page
-                    if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eNext page")) {
+                    if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eNext page")) {
                         Main.page.put(p, Main.page.get(p) + 1);
                         Inventories.openHomeList(p, p);
                     }
 
                     // previous page
-                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§ePrevious page")) {
+                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§ePrevious page")) {
                         Main.page.put(p, Main.page.get(p) + 1);
                         Inventories.openHomeList(p, p);
                     }
 
                     // settings
-                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSettings")) {
+                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eSettings")) {
 
                         Inventories.openInventory(InventoryType.SETTINGS, p);
                     }
 
                     // sorting
-                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSorting")) {
+                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§eSorting")) {
 
                         // type
                         if (e.getClick() == ClickType.LEFT) {
@@ -629,7 +629,7 @@ public class InventoryClickListener implements Listener {
                     }
 
                     // no homes
-                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo homes")) {
+                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("Â§cNo homes")) {
                         e.setCancelled(true);
                     }
 
@@ -640,7 +640,7 @@ public class InventoryClickListener implements Listener {
                                 || !cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.Blacklist").contains(p.getName())) {
                             String visit_success = cfg.getString("Settings.ChatMessages.Visit.Success");
 
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("Â§a", "");
                             Home home = new Home(name, target);
 
                             if (home.isExisting()) {
