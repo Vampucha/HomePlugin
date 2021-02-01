@@ -42,20 +42,20 @@ public class Main extends JavaPlugin {
         getCommand("home").setExecutor(new HomeCommand());
         getCommand("homes").setExecutor(new HomesCommand());
 
-        Bukkit.getServer().getConsoleSender().sendMessage(prefix + " §6by Vampucha successfully loaded!");
+        Bukkit.getServer().getConsoleSender().sendMessage(prefix + " Â§6by Vampucha successfully loaded!");
         if (!prefix.equals(""))
-            prefix += " §f| ";
+            prefix += " Â§f| ";
     }
 
     public void setUp() {
 
         if (!cfg.contains("Settings.ChatMessages.Prefix")) {
-            cfg.set("Settings.ChatMessages.Prefix", "§cHomePlugin");
+            cfg.set("Settings.ChatMessages.Prefix", "Â§cHomePlugin");
             getPlugin().saveConfig();
         }
 
         if (!cfg.contains("Settings.ChatMessages.NoPermission")) {
-            cfg.set("Settings.ChatMessages.NoPermission", "§cYou don't have the permission to do that!");
+            cfg.set("Settings.ChatMessages.NoPermission", "Â§cYou don't have the permission to do that!");
             getPlugin().saveConfig();
         }
 
@@ -63,27 +63,27 @@ public class Main extends JavaPlugin {
         no_perm = cfg.getString("Settings.ChatMessages.NoPermission");
 
         if (!cfg.contains("Settings.ChatMessages.Create")) {
-            cfg.set("Settings.ChatMessages.Create.Success", "§aYou successfully created the home §6%name%");
-            cfg.set("Settings.ChatMessages.Create.IsExisting", "§cThe home §6%name% §cis already existing!");
+            cfg.set("Settings.ChatMessages.Create.Success", "Â§aYou successfully created the home Â§6%name%");
+            cfg.set("Settings.ChatMessages.Create.IsExisting", "Â§cThe home Â§6%name% Â§cis already existing!");
             getPlugin().saveConfig();
         }
 
         if (!cfg.contains("Settings.ChatMessages.Delete")) {
-            cfg.set("Settings.ChatMessages.Delete.Success", "§aYou successfully deleted the home §6%name%");
-            cfg.set("Settings.ChatMessages.Delete.NotExisting", "§cThe home §6%name% §cis not existing!");
+            cfg.set("Settings.ChatMessages.Delete.Success", "Â§aYou successfully deleted the home Â§6%name%");
+            cfg.set("Settings.ChatMessages.Delete.NotExisting", "Â§cThe home Â§6%name% Â§cis not existing!");
             getPlugin().saveConfig();
         }
 
         if (!cfg.contains("Settings.ChatMessages.Modify")) {
-            cfg.set("Settings.ChatMessages.Modify.NotExisting", "§cThe home §6%name% §cis not existing!");
-            cfg.set("Settings.ChatMessages.Modify.Name.Success", "§aYou successfully changed the name to §6%name%");
-            cfg.set("Settings.ChatMessages.Modify.Location.Success", "§aYou successfully changed the location to §6X: %x% Y: %y% Z: %z%");
+            cfg.set("Settings.ChatMessages.Modify.NotExisting", "Â§cThe home Â§6%name% Â§cis not existing!");
+            cfg.set("Settings.ChatMessages.Modify.Name.Success", "Â§aYou successfully changed the name to Â§6%name%");
+            cfg.set("Settings.ChatMessages.Modify.Location.Success", "Â§aYou successfully changed the location to Â§6X: %x% Y: %y% Z: %z%");
             getPlugin().saveConfig();
         }
 
         if (!cfg.contains("Settings.ChatMessages.Visit")) {
-            cfg.set("Settings.ChatMessages.Visit.Success", "§aYou successfully visited the home §6%name%");
-            cfg.set("Settings.ChatMessages.Visit.NotExisting", "§cThe home §6%name% §cis not existing!");
+            cfg.set("Settings.ChatMessages.Visit.Success", "Â§aYou successfully visited the home Â§6%name%");
+            cfg.set("Settings.ChatMessages.Visit.NotExisting", "Â§cThe home Â§6%name% Â§cis not existing!");
             getPlugin().saveConfig();
         }
 

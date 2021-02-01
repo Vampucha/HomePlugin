@@ -38,15 +38,15 @@ public class Inventories {
         ArrayList<String> wBookLore = new ArrayList<>();
 
         // close
-        barrierMeta.setDisplayName("§eClose");
-        barrierLore.add("§7Click to close");
+        barrierMeta.setDisplayName("Â§eClose");
+        barrierLore.add("Â§7Click to close");
         barrierMeta.setLore(barrierLore);
         barrier.setItemMeta(barrierMeta);
         inv.setItem(49, barrier);
 
         // settings
-        wBookMeta.setDisplayName("§eSettings");
-        wBookLore.add("§7Click to open the settings");
+        wBookMeta.setDisplayName("Â§eSettings");
+        wBookLore.add("Â§7Click to open the settings");
         wBookMeta.setLore(wBookLore);
         wBook.setItemMeta(wBookMeta);
         inv.setItem(45, wBook);
@@ -67,8 +67,8 @@ public class Inventories {
 
             // next page
             if (getHomes(target).size() > page * 45) {
-                arrowMeta.setDisplayName("§eNext page");
-                arrowLore.add("§7Click to go to the next page");
+                arrowMeta.setDisplayName("Â§eNext page");
+                arrowLore.add("Â§7Click to go to the next page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(50, arrow);
@@ -76,9 +76,9 @@ public class Inventories {
 
             // previous page
             if (page > 1) {
-                arrowMeta.setDisplayName("§ePrevious page");
+                arrowMeta.setDisplayName("Â§ePrevious page");
                 arrowLore.clear();
-                arrowLore.add("§7Click to go to the previous page");
+                arrowLore.add("Â§7Click to go to the previous page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(48, arrow);
@@ -87,10 +87,10 @@ public class Inventories {
             // sorting
             String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type");
             String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction");
-            hopperMeta.setDisplayName("§eSorting");
-            hopperLore.add("§7Current: " + sorting + " | " + direction);
-            hopperLore.add("§7Left-click to change type");
-            hopperLore.add("§7Right-click to change direction");
+            hopperMeta.setDisplayName("Â§eSorting");
+            hopperLore.add("Â§7Current: " + sorting + " | " + direction);
+            hopperLore.add("Â§7Left-click to change type");
+            hopperLore.add("Â§7Right-click to change direction");
             hopperMeta.setLore(hopperLore);
             hopper.setItemMeta(hopperMeta);
             inv.setItem(46, hopper);
@@ -111,21 +111,21 @@ public class Inventories {
                     double z = (double) Math.round(loc.getZ() * 100) / 100;
 
                     if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
-                        iconLore.add("§7World: " + loc.getWorld().getName());
-                        iconLore.add("§7X: " + x + " Y: " + y + " Z: " + z);
-                        iconLore.add("§7--------------------");
+                        iconLore.add("Â§7World: " + loc.getWorld().getName());
+                        iconLore.add("Â§7X: " + x + " Y: " + y + " Z: " + z);
+                        iconLore.add("Â§7--------------------");
                     }
                     if (p == target) {
-                        iconLore.add("§7Left-click to visit");
-                        iconLore.add("§7Right-click to edit");
-                        iconLore.add("§7Mid-click to delete");
+                        iconLore.add("Â§7Left-click to visit");
+                        iconLore.add("Â§7Right-click to edit");
+                        iconLore.add("Â§7Mid-click to delete");
                     } else if (cfg.getBoolean("Players." + target.getUniqueId() + ".Settings.Visitors.Enabled")
                             || cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.Whitelist").contains(p.getName())
                             || !cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.BlackList").contains(p.getName()))
-                        iconLore.add("§7Click to visit");
-                    else iconLore.add("§cYou can't visit the homes of this player");
+                        iconLore.add("Â§7Click to visit");
+                    else iconLore.add("Â§cYou can't visit the homes of this player");
 
-                    iconMeta.setDisplayName("§a" + home.getName());
+                    iconMeta.setDisplayName("Â§a" + home.getName());
                     iconMeta.setLore(iconLore);
                     icon.setItemMeta(iconMeta);
 
@@ -141,8 +141,8 @@ public class Inventories {
             ItemMeta redGlassPaneMeta = redGlassPane.getItemMeta();
             ArrayList<String> redGlassPaneLore = new ArrayList<>();
 
-            redGlassPaneMeta.setDisplayName("§cNo homes");
-            redGlassPaneLore.add("§7You can create a home with /home create <name>");
+            redGlassPaneMeta.setDisplayName("Â§cNo homes");
+            redGlassPaneLore.add("Â§7You can create a home with /home create <name>");
             redGlassPaneMeta.setLore(redGlassPaneLore);
             redGlassPane.setItemMeta(redGlassPaneMeta);
             inv.setItem(22, redGlassPane);
@@ -172,17 +172,17 @@ public class Inventories {
 
         // next page
         if (getIcons().size() > page * 45) {
-            arrowMeta.setDisplayName("§eNext page");
-            arrowLore.add("§7Click to go to the next page");
+            arrowMeta.setDisplayName("Â§eNext page");
+            arrowLore.add("Â§7Click to go to the next page");
             arrowMeta.setLore(arrowLore);
             arrow.setItemMeta(arrowMeta);
             inv.setItem(50, arrow);
         }
         // previous page
         if (page > 1) {
-            arrowMeta.setDisplayName("§ePrevious page");
+            arrowMeta.setDisplayName("Â§ePrevious page");
             arrowLore.clear();
-            arrowLore.add("§7Click to go to the previous page");
+            arrowLore.add("Â§7Click to go to the previous page");
             arrowMeta.setLore(arrowLore);
             arrow.setItemMeta(arrowMeta);
             inv.setItem(48, arrow);
@@ -191,23 +191,23 @@ public class Inventories {
         // sorting
         String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Type");
         String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Direction");
-        hopperMeta.setDisplayName("§eSorting");
-        hopperLore.add("§7Current: " + sorting + " | " + direction);
-        hopperLore.add("§7--------------------");
-        hopperLore.add("§7Left-click to change type");
-        hopperLore.add("§7Right-click to change direction");
+        hopperMeta.setDisplayName("Â§eSorting");
+        hopperLore.add("Â§7Current: " + sorting + " | " + direction);
+        hopperLore.add("Â§7--------------------");
+        hopperLore.add("Â§7Left-click to change type");
+        hopperLore.add("Â§7Right-click to change direction");
         hopperMeta.setLore(hopperLore);
         hopper.setItemMeta(hopperMeta);
         inv.setItem(46, hopper);
 
         if (Main.lastGui.get(p) != null) {
             // back
-            barrierMeta.setDisplayName("§eBack");
-            barrierLore.add("§7Click to go back");
+            barrierMeta.setDisplayName("Â§eBack");
+            barrierLore.add("Â§7Click to go back");
         } else {
             // close
-            barrierMeta.setDisplayName("§eClose");
-            barrierLore.add("§7Click to close");
+            barrierMeta.setDisplayName("Â§eClose");
+            barrierLore.add("Â§7Click to close");
         }
         barrierMeta.setLore(barrierLore);
         barrier.setItemMeta(barrierMeta);
@@ -222,8 +222,8 @@ public class Inventories {
                 ItemMeta iconMeta = icon.getItemMeta();
                 ArrayList<String> iconLore = new ArrayList<>();
 
-                iconMeta.setDisplayName("§a" + icon.getType().toString().toLowerCase().replaceAll("_", " "));
-                iconLore.add("§7Click to choose");
+                iconMeta.setDisplayName("Â§a" + icon.getType().toString().toLowerCase().replaceAll("_", " "));
+                iconLore.add("Â§7Click to choose");
                 iconMeta.setLore(iconLore);
                 icon.setItemMeta(iconMeta);
 
@@ -253,20 +253,20 @@ public class Inventories {
 
         if (Main.lastGui.get(p) != null) {
             // back
-            barrierMeta.setDisplayName("§eBack");
-            barrierLore.add("§7Click to go back");
+            barrierMeta.setDisplayName("Â§eBack");
+            barrierLore.add("Â§7Click to go back");
         } else {
             // close
-            barrierMeta.setDisplayName("§eClose");
-            barrierLore.add("§7Click to close");
+            barrierMeta.setDisplayName("Â§eClose");
+            barrierLore.add("Â§7Click to close");
         }
         barrierMeta.setLore(barrierLore);
         barrier.setItemMeta(barrierMeta);
         inv.setItem(49, barrier);
 
         // add
-        limeConcreteMeta.setDisplayName("§eAdd");
-        limeConcreteLore.add("§7Click to add a player to the whitelist");
+        limeConcreteMeta.setDisplayName("Â§eAdd");
+        limeConcreteLore.add("Â§7Click to add a player to the whitelist");
         limeConcreteMeta.setLore(limeConcreteLore);
         limeConcrete.setItemMeta(limeConcreteMeta);
         inv.setItem(53, limeConcrete);
@@ -287,8 +287,8 @@ public class Inventories {
 
             // next page
             if (whitelist.size() > page * 45) {
-                arrowMeta.setDisplayName("§eNext page");
-                arrowLore.add("§7Click to go to the next page");
+                arrowMeta.setDisplayName("Â§eNext page");
+                arrowLore.add("Â§7Click to go to the next page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(50, arrow);
@@ -296,9 +296,9 @@ public class Inventories {
 
             // previous page
             if (page > 1) {
-                arrowMeta.setDisplayName("§ePrevious page");
+                arrowMeta.setDisplayName("Â§ePrevious page");
                 arrowLore.clear();
-                arrowLore.add("§7Click to go to the previous page");
+                arrowLore.add("Â§7Click to go to the previous page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(48, arrow);
@@ -307,10 +307,10 @@ public class Inventories {
             // sorting
             String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
             String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
-            hopperMeta.setDisplayName("§eSorting");
-            hopperLore.add("§7Current: " + sorting + " | " + direction);
-            hopperLore.add("§7Left-click to change type");
-            hopperLore.add("§7Right-click to change direction");
+            hopperMeta.setDisplayName("Â§eSorting");
+            hopperLore.add("Â§7Current: " + sorting + " | " + direction);
+            hopperLore.add("Â§7Left-click to change type");
+            hopperLore.add("Â§7Right-click to change direction");
             hopperMeta.setLore(hopperLore);
             hopper.setItemMeta(hopperMeta);
             inv.setItem(46, hopper);
@@ -330,12 +330,12 @@ public class Inventories {
                     SkullMeta headMeta = (SkullMeta) head.getItemMeta();
                     ArrayList<String> headLore = new ArrayList<>();
 
-                    headMeta.setDisplayName("§a" + player.getName());
+                    headMeta.setDisplayName("Â§a" + player.getName());
                     headMeta.setOwningPlayer(player);
                     if (Bukkit.getOnlinePlayers().contains(player))
-                        headLore.add("§7State: §aOnline");
-                    else headLore.add("§7State: §cOffline");
-                    headLore.add("§7Click to remove");
+                        headLore.add("Â§7State: Â§aOnline");
+                    else headLore.add("Â§7State: Â§cOffline");
+                    headLore.add("Â§7Click to remove");
                     headMeta.setLore(headLore);
                     head.setItemMeta(headMeta);
 
@@ -350,8 +350,8 @@ public class Inventories {
             ItemMeta redGlassPaneMeta = redGlassPane.getItemMeta();
             ArrayList<String> redGlassPaneLore = new ArrayList<>();
 
-            redGlassPaneMeta.setDisplayName("§cNo players on the whitelist");
-            redGlassPaneLore.add("§7You can add a player with the add-button");
+            redGlassPaneMeta.setDisplayName("Â§cNo players on the whitelist");
+            redGlassPaneLore.add("Â§7You can add a player with the add-button");
             redGlassPaneMeta.setLore(redGlassPaneLore);
             redGlassPane.setItemMeta(redGlassPaneMeta);
             inv.setItem(22, redGlassPane);
@@ -379,20 +379,20 @@ public class Inventories {
 
         if (Main.lastGui.get(p) != null) {
             // back
-            barrierMeta.setDisplayName("§eBack");
-            barrierLore.add("§7Click to go back");
+            barrierMeta.setDisplayName("Â§eBack");
+            barrierLore.add("Â§7Click to go back");
         } else {
             // close
-            barrierMeta.setDisplayName("§eClose");
-            barrierLore.add("§7Click to close");
+            barrierMeta.setDisplayName("Â§eClose");
+            barrierLore.add("Â§7Click to close");
         }
         barrierMeta.setLore(barrierLore);
         barrier.setItemMeta(barrierMeta);
         inv.setItem(49, barrier);
 
         // add
-        limeConcreteMeta.setDisplayName("§eAdd");
-        limeConcreteLore.add("§7Click to add a player to the blacklist");
+        limeConcreteMeta.setDisplayName("Â§eAdd");
+        limeConcreteLore.add("Â§7Click to add a player to the blacklist");
         limeConcreteMeta.setLore(limeConcreteLore);
         limeConcrete.setItemMeta(limeConcreteMeta);
         inv.setItem(53, limeConcrete);
@@ -413,8 +413,8 @@ public class Inventories {
 
             // next page
             if (blacklist.size() > page * 45) {
-                arrowMeta.setDisplayName("§eNext page");
-                arrowLore.add("§7Click to go to the next page");
+                arrowMeta.setDisplayName("Â§eNext page");
+                arrowLore.add("Â§7Click to go to the next page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(50, arrow);
@@ -422,9 +422,9 @@ public class Inventories {
 
             // previous page
             if (page > 1) {
-                arrowMeta.setDisplayName("§ePrevious page");
+                arrowMeta.setDisplayName("Â§ePrevious page");
                 arrowLore.clear();
-                arrowLore.add("§7Click to go to the previous page");
+                arrowLore.add("Â§7Click to go to the previous page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(48, arrow);
@@ -433,10 +433,10 @@ public class Inventories {
             // sorting
             String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
             String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
-            hopperMeta.setDisplayName("§eSorting");
-            hopperLore.add("§7Current: " + sorting + " | " + direction);
-            hopperLore.add("§7Left-click to change type");
-            hopperLore.add("§7Right-click to change direction");
+            hopperMeta.setDisplayName("Â§eSorting");
+            hopperLore.add("Â§7Current: " + sorting + " | " + direction);
+            hopperLore.add("Â§7Left-click to change type");
+            hopperLore.add("Â§7Right-click to change direction");
             hopperMeta.setLore(hopperLore);
             hopper.setItemMeta(hopperMeta);
             inv.setItem(46, hopper);
@@ -456,12 +456,12 @@ public class Inventories {
                     SkullMeta headMeta = (SkullMeta) head.getItemMeta();
                     ArrayList<String> headLore = new ArrayList<>();
 
-                    headMeta.setDisplayName("§a" + player.getName());
+                    headMeta.setDisplayName("Â§a" + player.getName());
                     headMeta.setOwningPlayer(player);
                     if (Bukkit.getOnlinePlayers().contains(player))
-                        headLore.add("§7State: §aOnline");
-                    else headLore.add("§7State: §cOffline");
-                    headLore.add("§7Click to remove");
+                        headLore.add("Â§7State: Â§aOnline");
+                    else headLore.add("Â§7State: Â§cOffline");
+                    headLore.add("Â§7Click to remove");
                     headMeta.setLore(headLore);
                     head.setItemMeta(headMeta);
 
@@ -476,8 +476,8 @@ public class Inventories {
             ItemMeta redGlassPaneMeta = redGlassPane.getItemMeta();
             ArrayList<String> redGlassPaneLore = new ArrayList<>();
 
-            redGlassPaneMeta.setDisplayName("§cNo players on the blacklist");
-            redGlassPaneLore.add("§7You can add a player with the add-button");
+            redGlassPaneMeta.setDisplayName("Â§cNo players on the blacklist");
+            redGlassPaneLore.add("Â§7You can add a player with the add-button");
             redGlassPaneMeta.setLore(redGlassPaneLore);
             redGlassPane.setItemMeta(redGlassPaneMeta);
             inv.setItem(22, redGlassPane);
@@ -505,12 +505,12 @@ public class Inventories {
 
         if (Main.lastGui.get(p) != null) {
             // back
-            barrierMeta.setDisplayName("§eBack");
-            barrierLore.add("§7Click to go back");
+            barrierMeta.setDisplayName("Â§eBack");
+            barrierLore.add("Â§7Click to go back");
         } else {
             // close
-            barrierMeta.setDisplayName("§eClose");
-            barrierLore.add("§7Click to close");
+            barrierMeta.setDisplayName("Â§eClose");
+            barrierLore.add("Â§7Click to close");
         }
         barrierMeta.setLore(barrierLore);
         barrier.setItemMeta(barrierMeta);
@@ -529,8 +529,8 @@ public class Inventories {
 
             // next page
             if (players.size() > page * 45) {
-                arrowMeta.setDisplayName("§eNext page");
-                arrowLore.add("§7Click to go to the next page");
+                arrowMeta.setDisplayName("Â§eNext page");
+                arrowLore.add("Â§7Click to go to the next page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(50, arrow);
@@ -538,9 +538,9 @@ public class Inventories {
 
             // previous page
             if (page > 1) {
-                arrowMeta.setDisplayName("§ePrevious page");
+                arrowMeta.setDisplayName("Â§ePrevious page");
                 arrowLore.clear();
-                arrowLore.add("§7Click to go to the previous page");
+                arrowLore.add("Â§7Click to go to the previous page");
                 arrowMeta.setLore(arrowLore);
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(48, arrow);
@@ -553,9 +553,9 @@ public class Inventories {
                     SkullMeta headMeta = (SkullMeta) head.getItemMeta();
                     ArrayList<String> headLore = new ArrayList<>();
 
-                    headMeta.setDisplayName("§a" + player.getName());
+                    headMeta.setDisplayName("Â§a" + player.getName());
                     headMeta.setOwningPlayer(p);
-                    headLore.add("§7Click to choose");
+                    headLore.add("Â§7Click to choose");
                     headMeta.setLore(headLore);
                     head.setItemMeta(headMeta);
 
@@ -570,8 +570,8 @@ public class Inventories {
             ItemMeta redGlassPaneMeta = redGlassPane.getItemMeta();
             ArrayList<String> redGlassPaneLore = new ArrayList<>();
 
-            redGlassPaneMeta.setDisplayName("§cNo players online");
-            redGlassPaneLore.add("§7Currently are no other players online");
+            redGlassPaneMeta.setDisplayName("Â§cNo players online");
+            redGlassPaneLore.add("Â§7Currently are no other players online");
             redGlassPaneMeta.setLore(redGlassPaneLore);
             redGlassPane.setItemMeta(redGlassPaneMeta);
             inv.setItem(22, redGlassPane);
@@ -594,14 +594,14 @@ public class Inventories {
             ArrayList<String> limeGlassPaneLore = new ArrayList<>();
             ArrayList<String> redGlassPaneLore = new ArrayList<>();
 
-            limeGlassPaneMeta.setDisplayName("§aYes");
-            limeGlassPaneLore.add("§7Click to confirm");
+            limeGlassPaneMeta.setDisplayName("Â§aYes");
+            limeGlassPaneLore.add("Â§7Click to confirm");
             limeGlassPaneMeta.setLore(limeGlassPaneLore);
             limeGlassPane.setItemMeta(limeGlassPaneMeta);
             inv.setItem(12, limeGlassPane);
 
-            redGlassPaneMeta.setDisplayName("§cNo");
-            redGlassPaneLore.add("§7Click to cancel");
+            redGlassPaneMeta.setDisplayName("Â§cNo");
+            redGlassPaneLore.add("Â§7Click to cancel");
             redGlassPaneMeta.setLore(redGlassPaneLore);
             redGlassPane.setItemMeta(redGlassPaneMeta);
             inv.setItem(14, redGlassPane);
@@ -628,11 +628,11 @@ public class Inventories {
 
             // close
             if (Main.lastGui.get(p) != null) {
-                barrierMeta.setDisplayName("§eBack");
-                barrierLore.add("§7Click to go back");
+                barrierMeta.setDisplayName("Â§eBack");
+                barrierLore.add("Â§7Click to go back");
             } else {
-                barrierMeta.setDisplayName("§eClose");
-                barrierLore.add("§7Click to close");
+                barrierMeta.setDisplayName("Â§eClose");
+                barrierLore.add("Â§7Click to close");
             }
             barrierMeta.setLore(barrierLore);
             barrier.setItemMeta(barrierMeta);
@@ -640,20 +640,20 @@ public class Inventories {
 
             // information
             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
-                limeDyeMeta.setDisplayName("§eShow information");
-                limeDyeLore.add("§7Show information about the home in \"Your homes\"");
-                limeDyeLore.add("§7State: §aOn");
-                limeDyeLore.add("§7--------------------");
-                limeDyeLore.add("§7Click to disable");
+                limeDyeMeta.setDisplayName("Â§eShow information");
+                limeDyeLore.add("Â§7Show information about the home in \"Your homes\"");
+                limeDyeLore.add("Â§7State: Â§aOn");
+                limeDyeLore.add("Â§7--------------------");
+                limeDyeLore.add("Â§7Click to disable");
                 limeDyeMeta.setLore(limeDyeLore);
                 limeDye.setItemMeta(limeDyeMeta);
                 inv.setItem(10, limeDye);
             } else {
-                redDyeMeta.setDisplayName("§eShow information");
-                redDyeLore.add("§7Show information about the home in \"Your homes\"");
-                redDyeLore.add("§7State: §cOff");
-                redDyeLore.add("§7--------------------");
-                redDyeLore.add("§7Click to enable");
+                redDyeMeta.setDisplayName("Â§eShow information");
+                redDyeLore.add("Â§7Show information about the home in \"Your homes\"");
+                redDyeLore.add("Â§7State: Â§cOff");
+                redDyeLore.add("Â§7--------------------");
+                redDyeLore.add("Â§7Click to enable");
                 redDyeMeta.setLore(redDyeLore);
                 redDye.setItemMeta(redDyeMeta);
                 inv.setItem(10, redDye);
@@ -662,21 +662,21 @@ public class Inventories {
             // delete protection
             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
                 limeDyeLore.clear();
-                limeDyeMeta.setDisplayName("§eDelete protection");
-                limeDyeLore.add("§7Open inventory to confirm delete");
-                limeDyeLore.add("§7State: §aOn");
-                limeDyeLore.add("§7--------------------");
-                limeDyeLore.add("§7Click to disable");
+                limeDyeMeta.setDisplayName("Â§eDelete protection");
+                limeDyeLore.add("Â§7Open inventory to confirm delete");
+                limeDyeLore.add("Â§7State: Â§aOn");
+                limeDyeLore.add("Â§7--------------------");
+                limeDyeLore.add("Â§7Click to disable");
                 limeDyeMeta.setLore(limeDyeLore);
                 limeDye.setItemMeta(limeDyeMeta);
                 inv.setItem(11, limeDye);
             } else {
                 redDyeLore.clear();
-                redDyeMeta.setDisplayName("§eDelete protection");
-                redDyeLore.add("§7Open inventory to corfirm delete");
-                redDyeLore.add("§7State: §cOff");
-                redDyeLore.add("§7--------------------");
-                redDyeLore.add("§7Click to enable");
+                redDyeMeta.setDisplayName("Â§eDelete protection");
+                redDyeLore.add("Â§7Open inventory to corfirm delete");
+                redDyeLore.add("Â§7State: Â§cOff");
+                redDyeLore.add("Â§7--------------------");
+                redDyeLore.add("Â§7Click to enable");
                 redDyeMeta.setLore(redDyeLore);
                 redDye.setItemMeta(redDyeMeta);
                 inv.setItem(11, redDye);
@@ -685,21 +685,21 @@ public class Inventories {
             // orientation
             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.Orientation")) {
                 limeDyeLore.clear();
-                limeDyeMeta.setDisplayName("§eOrientation");
-                limeDyeLore.add("§7Use yaw and pitch for homes");
-                limeDyeLore.add("§7State: §aOn");
-                limeDyeLore.add("§7--------------------");
-                limeDyeLore.add("§7Click to disable");
+                limeDyeMeta.setDisplayName("Â§eOrientation");
+                limeDyeLore.add("Â§7Use yaw and pitch for homes");
+                limeDyeLore.add("Â§7State: Â§aOn");
+                limeDyeLore.add("Â§7--------------------");
+                limeDyeLore.add("Â§7Click to disable");
                 limeDyeMeta.setLore(limeDyeLore);
                 limeDye.setItemMeta(limeDyeMeta);
                 inv.setItem(12, limeDye);
             } else {
                 redDyeLore.clear();
-                redDyeMeta.setDisplayName("§eOrientation");
-                redDyeLore.add("§7Use yaw and pitch for homes");
-                redDyeLore.add("§7State: §cOff");
-                redDyeLore.add("§7--------------------");
-                redDyeLore.add("§7Click to enable");
+                redDyeMeta.setDisplayName("Â§eOrientation");
+                redDyeLore.add("Â§7Use yaw and pitch for homes");
+                redDyeLore.add("Â§7State: Â§cOff");
+                redDyeLore.add("Â§7--------------------");
+                redDyeLore.add("Â§7Click to enable");
                 redDyeMeta.setLore(redDyeLore);
                 redDye.setItemMeta(redDyeMeta);
                 inv.setItem(12, redDye);
@@ -708,23 +708,23 @@ public class Inventories {
             // visitors
             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.Visitors.Enabled")) {
                 limeDyeLore.clear();
-                limeDyeMeta.setDisplayName("§eVisitors");
-                limeDyeLore.add("§7Player can visit your homes");
-                limeDyeLore.add("§7State: §aOn");
-                limeDyeLore.add("§7--------------------");
-                limeDyeLore.add("§7Left-click to disable");
-                limeDyeLore.add("§7Right-click to manage blacklist");
+                limeDyeMeta.setDisplayName("Â§eVisitors");
+                limeDyeLore.add("Â§7Player can visit your homes");
+                limeDyeLore.add("Â§7State: Â§aOn");
+                limeDyeLore.add("Â§7--------------------");
+                limeDyeLore.add("Â§7Left-click to disable");
+                limeDyeLore.add("Â§7Right-click to manage blacklist");
                 limeDyeMeta.setLore(limeDyeLore);
                 limeDye.setItemMeta(limeDyeMeta);
                 inv.setItem(13, limeDye);
             } else {
                 redDyeLore.clear();
-                redDyeMeta.setDisplayName("§eVisitors");
-                redDyeLore.add("§7Players can visit your homes");
-                redDyeLore.add("§7State: §cOff");
-                redDyeLore.add("§7--------------------");
-                redDyeLore.add("§7Left-click to enable");
-                redDyeLore.add("§7Right-click to manage whitelist");
+                redDyeMeta.setDisplayName("Â§eVisitors");
+                redDyeLore.add("Â§7Players can visit your homes");
+                redDyeLore.add("Â§7State: Â§cOff");
+                redDyeLore.add("Â§7--------------------");
+                redDyeLore.add("Â§7Left-click to enable");
+                redDyeLore.add("Â§7Right-click to manage whitelist");
                 redDyeMeta.setLore(redDyeLore);
                 redDye.setItemMeta(redDyeMeta);
                 inv.setItem(13, redDye);
@@ -759,18 +759,18 @@ public class Inventories {
             ArrayList<String> redConcreteLore = new ArrayList<>();
 
             // back
-            barrierMeta.setDisplayName("§eBack");
-            barrierLore.add("§7Click to go back");
+            barrierMeta.setDisplayName("Â§eBack");
+            barrierLore.add("Â§7Click to go back");
             barrierMeta.setLore(barrierLore);
             barrier.setItemMeta(barrierMeta);
             inv.setItem(22, barrier);
 
             // name
-            nametagMeta.setDisplayName("§eName");
-            nametagLore.add("§7" + name);
-            nametagLore.add("§7--------------------");
-            nametagLore.add("§7Click to change");
-            nametagLore.add("§6§lComming Soon");
+            nametagMeta.setDisplayName("Â§eName");
+            nametagLore.add("Â§7" + name);
+            nametagLore.add("Â§7--------------------");
+            nametagLore.add("Â§7Click to change");
+            nametagLore.add("Â§6Â§lComming Soon");
             nametagMeta.setLore(nametagLore);
             nametag.setItemMeta(nametagMeta);
             inv.setItem(10, nametag);
@@ -780,30 +780,30 @@ public class Inventories {
             double y = (double) Math.round(home.getLocation().getY() * 100) / 100;
             double z = (double) Math.round(home.getLocation().getZ() * 100) / 100;
             String w = home.getLocation().getWorld().getName();
-            compassMeta.setDisplayName("§eLocation");
-            compassLore.add("§7X: " + x);
-            compassLore.add("§7Y: " + y);
-            compassLore.add("§7Z: " + z);
-            compassLore.add("§7World: " + w);
-            compassLore.add("§7--------------------");
-            compassLore.add("§7Click to change");
-            compassLore.add("§6§lComming Soon");
+            compassMeta.setDisplayName("Â§eLocation");
+            compassLore.add("Â§7X: " + x);
+            compassLore.add("Â§7Y: " + y);
+            compassLore.add("Â§7Z: " + z);
+            compassLore.add("Â§7World: " + w);
+            compassLore.add("Â§7--------------------");
+            compassLore.add("Â§7Click to change");
+            compassLore.add("Â§6Â§lComming Soon");
             compassMeta.setLore(compassLore);
             compass.setItemMeta(compassMeta);
             inv.setItem(11, compass);
 
             // icon
-            iconMeta.setDisplayName("§eIcon");
-            iconLore.add("§7" + icon.getType().toString().toLowerCase().replaceAll("_", " "));
-            iconLore.add("§7--------------------");
-            iconLore.add("§7Click to change");
+            iconMeta.setDisplayName("Â§eIcon");
+            iconLore.add("Â§7" + icon.getType().toString().toLowerCase().replaceAll("_", " "));
+            iconLore.add("Â§7--------------------");
+            iconLore.add("Â§7Click to change");
             iconMeta.setLore(iconLore);
             icon.setItemMeta(iconMeta);
             inv.setItem(12, icon);
 
             // delete
-            redConcreteMeta.setDisplayName("§cDelete");
-            redConcreteLore.add("§7Click to delete");
+            redConcreteMeta.setDisplayName("Â§cDelete");
+            redConcreteLore.add("Â§7Click to delete");
             redConcreteMeta.setLore(redConcreteLore);
             redConcrete.setItemMeta(redConcreteMeta);
             inv.setItem(13, redConcrete);
