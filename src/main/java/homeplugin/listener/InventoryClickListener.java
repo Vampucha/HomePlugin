@@ -1,7 +1,7 @@
 package homeplugin.listener;
 
 import net.wesjd.anvilgui.AnvilGUI;
-import org.bukkit.Material;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,7 +14,6 @@ import homeplugin.others.Home;
 import homeplugin.others.Inventories;
 import homeplugin.others.Inventories.InventoryType;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 
@@ -439,26 +438,28 @@ public class InventoryClickListener implements Listener {
                         // name
                         else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eName")) {
 
+                            Home home = Main.currentHome.get(p);
+                            ItemStack icon = home.getIcon();
                             AnvilGUI.Builder builder = new AnvilGUI.Builder();
 
-                            ItemStack paper = new ItemStack(Material.PAPER);
-                            ItemMeta paperMeta = paper.getItemMeta();
-                            paperMeta.setDisplayName("§aRename me!");
-                            paper.setItemMeta(paperMeta);
-
-                            builder.itemLeft(paper);
-                            builder.onLeftInputClick(player -> e.setCancelled(true));
-
-                            builder.title("Rename");
-                            builder.text("");
-                            builder.open(p);
-                            builder.preventClose();
-
                             builder.onComplete((player, text) -> {
-                                Home home = Main.currentHome.get(player);
                                 home.setName(text);
                                 return AnvilGUI.Response.close();
                             });
+                            builder.onClose((player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
+                                Inventories.openInventory(InventoryType.HOME, p);
+                            }, 1)));
+                            builder.onLeftInputClick(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
+                                Inventories.openInventory(InventoryType.HOME, p);
+                            }, 1));
+                            builder.plugin(Main.getPlugin());
+
+                            builder.title("Rename");
+
+                            builder.itemLeft(icon);
+                            builder.text("§a" + home.getName());
+
+                            builder.open(p);
                         }
 
                         // icon

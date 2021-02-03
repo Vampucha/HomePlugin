@@ -1,5 +1,5 @@
 api-version: 1.16
-main: hp.main.Main
+main: homeplugin.main.Main
 name: HomePlugin
 version: 1.0
 author: Vampucha

@@ -5,17 +5,35 @@
   <artifactId>HomePlugin</artifactId>
   <version>1.0-SNAPSHOT</version>
   <build>
-    <defaultGoal>clean package install</defaultGoal>
+    <outputDirectory>D:/Minecraft/servers/Server_1.16.4/plugins</outputDirectory>
     <resources>
       <resource>
         <filtering>true</filtering>
         <directory>src/main/resources</directory>
       </resource>
     </resources>
+    <finalName>HomePlugin</finalName>
     <plugins>
       <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.3</version>
+        <version>3.2.4</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -35,10 +53,22 @@
       <id>codemc-snapshots</id>
       <url>https://repo.codemc.io/repository/maven-snapshots/</url>
     </repository>
+    <repository>
+      <id>spigot-repo</id>
+      <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+    </repository>
   </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>1.16.4-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
   <properties>
-    <maven.compiler.target>15</maven.compiler.target>
-    <maven.compiler.source>15</maven.compiler.source>
+    <java.version>15</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <outputFilePath>D:/Minecraft/servers/Server_1.16.4/plugins/HomePlugin.jar</outputFilePath>
   </properties>
 </project>

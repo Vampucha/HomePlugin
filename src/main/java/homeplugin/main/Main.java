@@ -3,6 +3,7 @@ package homeplugin.main;
 import homeplugin.listener.PlayerJoinListener;
 import homeplugin.others.Home;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
@@ -44,7 +45,7 @@ public class Main extends JavaPlugin {
 
         Bukkit.getServer().getConsoleSender().sendMessage(prefix + " §6by Vampucha successfully loaded!");
         if (!prefix.equals(""))
-            prefix += " §f| ";
+            prefix += ChatColor.WHITE + " | ";
     }
 
     public void setUp() {
