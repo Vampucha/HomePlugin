@@ -28,6 +28,7 @@ public class Main extends JavaPlugin {
     public static HashMap<Player, Integer> page = new HashMap<>();
     public static HashMap<Player, String> lastGui = new HashMap<>();
     public static HashMap<Player, Home> currentHome = new HashMap<>();
+    public static HashMap<Player, String> search = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -100,6 +101,7 @@ public class Main extends JavaPlugin {
         page.put(p, 1);
         lastGui.put(p, null);
         currentHome.put(p, null);
+        search.put(p, "");
 
         if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
             cfg.set("Players." + p.getUniqueId() + ".Settings.ShowInformation", true);

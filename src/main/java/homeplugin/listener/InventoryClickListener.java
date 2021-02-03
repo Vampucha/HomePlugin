@@ -568,6 +568,44 @@ public class InventoryClickListener implements Listener {
                             } else e.setCancelled(true);
                         }
 
+                        // search
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSearch")) {
+
+                            // search
+                            if (Main.search.get(p).isEmpty() || e.getClick() == ClickType.LEFT) {
+
+                                AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                                builder.plugin(Main.getPlugin());
+
+                                ItemStack paper = new ItemStack(Material.PAPER);
+                                ItemMeta paperMeta = paper.getItemMeta();
+                                paperMeta.setDisplayName("§akeyword");
+                                if(!Main.search.get(p).isEmpty()) paperMeta.setDisplayName("§a" + Main.search.get(p));
+                                paper.setItemMeta(paperMeta);
+
+                                builder.onComplete((player, text) -> {
+                                    Main.search.put(player, text);
+                                    return AnvilGUI.Response.close();
+                                });
+                                builder.onClose(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openHomeList(p, p), 1));
+                                builder.onLeftInputClick(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openHomeList(p, p), 1));
+
+                                builder.itemLeft(paper);
+                                builder.text("keyword");
+                                if(!Main.search.get(p).isEmpty()) builder.text(Main.search.get(p));
+
+                                builder.title("Enter keyword");
+
+                                builder.open(p);
+                            }
+
+                            // remove search
+                            else if (!Main.search.get(p).isEmpty() && e.getClick() == ClickType.RIGHT) {
+                                Main.search.put(p, "");
+                                Inventories.openHomeList(p, p);
+                            }
+                        }
+
                         // no homes
                         else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§cNo homes")) {
 

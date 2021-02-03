@@ -99,7 +99,11 @@ public class Inventories {
 
             // search
             anvilMeta.setDisplayName("§eSearch");
-            anvilLore.add("§7Click to search for a home");
+            if (!Main.search.get(p).isEmpty()) {
+                anvilLore.add("§7Current keyword: " + Main.search.get(p));
+                anvilLore.add("§7Left-click to change the keyword");
+                anvilLore.add("§7Right-click to remove the search");
+            } else anvilLore.add("§7Click to search for a home");
             anvilMeta.setLore(anvilLore);
             anvil.setItemMeta(anvilMeta);
             inv.setItem(47, anvil);
@@ -116,7 +120,9 @@ public class Inventories {
             inv.setItem(46, hopper);
 
             // homes
-            ArrayList<String> homes = sortHomeList(getHomes(target), p);
+            ArrayList<String> homes = getHomes(target);
+            homes = sortHomeList(homes, p);
+            homes = searchHomeList(homes, p);
 
             for (int i = (page - 1) * 45; i < page * 45; i++) {
                 if (homes.size() > i) {
@@ -986,19 +992,31 @@ public class Inventories {
         return iconsName;
     }
 
-    private static ArrayList<String> sortHomeList(ArrayList<String> unsortedList, Player p) {
+    private static ArrayList<String> searchHomeList(ArrayList<String> list, Player p) {
+        ArrayList<String> searchResults = new ArrayList<>();
+        if (!Main.search.get(p).isEmpty()) {
+            for (String name : list) {
+                if (name.toLowerCase().contains(Main.search.get(p).toLowerCase())) {
+                    searchResults.add(name);
+                }
+            }
+        } else return list;
+        return searchResults;
+    }
+
+    private static ArrayList<String> sortHomeList(ArrayList<String> list, Player p) {
         switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type")) {
             case "date":
                 if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction").equals("falling"))
-                    Collections.reverse(unsortedList);
+                    Collections.reverse(list);
                 break;
             case "name":
-                Collections.sort(unsortedList);
+                Collections.sort(list);
                 if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction").equals("falling"))
-                    Collections.reverse(unsortedList);
+                    Collections.reverse(list);
                 break;
         }
-        return unsortedList;
+        return list;
     }
 
     private static ArrayList<String> sortIconList(Player p) {
