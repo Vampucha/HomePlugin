@@ -2,6 +2,8 @@ package homeplugin.listener;
 
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +16,7 @@ import homeplugin.others.Home;
 import homeplugin.others.Inventories;
 import homeplugin.others.Inventories.InventoryType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 
@@ -164,7 +167,8 @@ public class InventoryClickListener implements Listener {
                         // back
                         else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eBack")) {
                             Main.page.put(p, 1);
-                            Inventories.openInventory(InventoryType.HOME, p);
+                            if (Main.lastGui.get(p).equals("Homes of " + p.getName())) Inventories.openHomeList(p, p);
+                            else Inventories.openInventory(InventoryType.HOME, p);
                         }
 
                         // sorting
@@ -207,12 +211,22 @@ public class InventoryClickListener implements Listener {
                         else {
                             Home home = Main.currentHome.get(p);
                             home.setIcon(e.getCurrentItem());
+
+                            // close inventory
                             if (Main.lastGui.get(p) == null) {
                                 p.closeInventory();
                                 p.sendMessage(Main.prefix + "§aYou successfully changed the icon to §6"
                                         + home.getIcon().getType().toString().toLowerCase().replaceAll("_", " "));
-                            } else if (Main.lastGui.get(p).equals(home.getName())) {
+                            }
+
+                            // home settings
+                            else if (Main.lastGui.get(p).equals(home.getName())) {
                                 Inventories.openInventory(InventoryType.HOME, p);
+                            }
+
+                            // home list
+                            else if (Main.lastGui.get(p).equals("Homes of " + p.getName())) {
+                                Inventories.openHomeList(p, p);
                             }
                         }
 
@@ -435,29 +449,61 @@ public class InventoryClickListener implements Listener {
                             }
                         }
 
+                        // create
+                        else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eCreate home")) {
+
+                            AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                            builder.plugin(Main.getPlugin());
+
+                            ItemStack icon = findIcon(p);
+                            ItemMeta iconMeta = icon.getItemMeta();
+                            iconMeta.setDisplayName("§aNew Home");
+                            icon.setItemMeta(iconMeta);
+
+                            builder.onComplete((player, text) -> {
+                                Home home = new Home(text, player);
+                                home.create();
+                                Main.currentHome.put(player, home);
+                                Main.lastGui.put(player, "Homes of " + player.getName());
+                                Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openIconList(p), 2);
+                                return AnvilGUI.Response.close();
+                            });
+                            builder.onClose(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openHomeList(p, p), 1));
+                            builder.onLeftInputClick(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openHomeList(p, p), 1));
+
+                            builder.title("Enter name");
+
+                            builder.itemLeft(icon);
+                            builder.text(icon.getItemMeta().getDisplayName());
+
+                            builder.open(p);
+                        }
+
                         // name
                         else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eName")) {
 
                             Home home = Main.currentHome.get(p);
+
                             ItemStack icon = home.getIcon();
+                            ItemMeta iconMeta = icon.getItemMeta();
+                            iconMeta.setDisplayName("§a" + home.getName());
+                            iconMeta.setLore(new ArrayList<>());
+                            icon.setItemMeta(iconMeta);
+
                             AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                            builder.plugin(Main.getPlugin());
 
                             builder.onComplete((player, text) -> {
                                 home.setName(text);
                                 return AnvilGUI.Response.close();
                             });
-                            builder.onClose((player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
-                                Inventories.openInventory(InventoryType.HOME, p);
-                            }, 1)));
-                            builder.onLeftInputClick(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
-                                Inventories.openInventory(InventoryType.HOME, p);
-                            }, 1));
-                            builder.plugin(Main.getPlugin());
+                            builder.onClose(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openInventory(InventoryType.HOME, p), 1));
+                            builder.onLeftInputClick(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openInventory(InventoryType.HOME, p), 1));
 
                             builder.title("Rename");
 
                             builder.itemLeft(icon);
-                            builder.text("§a" + home.getName());
+                            builder.text(home.getName());
 
                             builder.open(p);
                         }
@@ -654,5 +700,25 @@ public class InventoryClickListener implements Listener {
             }
         } catch (Exception ignored) {
         }
+    }
+
+    public ItemStack findIcon(Player p) {
+        ItemStack icon = new ItemStack(Material.GRASS_BLOCK);
+
+        // normal
+        if (p.getWorld().getEnvironment().equals(World.Environment.NORMAL)) {
+            icon = new ItemStack(Material.GRASS_BLOCK);
+        }
+
+        // nether
+        else if (p.getWorld().getEnvironment().equals(World.Environment.NETHER)) {
+            icon = new ItemStack(Material.NETHERRACK);
+        }
+
+        // the_end
+        else if (p.getWorld().getEnvironment().equals(World.Environment.THE_END)) {
+            icon = new ItemStack(Material.END_STONE);
+        }
+        return icon;
     }
 }

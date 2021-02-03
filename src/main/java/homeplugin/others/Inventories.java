@@ -27,14 +27,17 @@ public class Inventories {
 
         // ItemStacks
         ItemStack barrier = new ItemStack(Material.BARRIER);
+        ItemStack limeConcrete = new ItemStack(Material.LIME_CONCRETE);
         ItemStack wBook = new ItemStack(Material.WRITABLE_BOOK);
 
         // ItemMetas
         ItemMeta barrierMeta = barrier.getItemMeta();
+        ItemMeta limeConcreteMeta = limeConcrete.getItemMeta();
         ItemMeta wBookMeta = wBook.getItemMeta();
 
         // Lores
         ArrayList<String> barrierLore = new ArrayList<>();
+        ArrayList<String> limeConcreteLore = new ArrayList<>();
         ArrayList<String> wBookLore = new ArrayList<>();
 
         // close
@@ -43,6 +46,13 @@ public class Inventories {
         barrierMeta.setLore(barrierLore);
         barrier.setItemMeta(barrierMeta);
         inv.setItem(49, barrier);
+
+        // create
+        limeConcreteMeta.setDisplayName("§eCreate home");
+        limeConcreteLore.add("§7Click to create a new home");
+        limeConcreteMeta.setLore(limeConcreteLore);
+        limeConcrete.setItemMeta(limeConcreteMeta);
+        inv.setItem(53, limeConcrete);
 
         // settings
         wBookMeta.setDisplayName("§eSettings");
@@ -54,14 +64,17 @@ public class Inventories {
         if (getHomes(target) != null && getHomes(target).size() > 0) {
 
             // ItemStacks
+            ItemStack anvil = new ItemStack(Material.ANVIL);
             ItemStack arrow = new ItemStack(Material.ARROW);
             ItemStack hopper = new ItemStack(Material.HOPPER);
 
             // ItemMetas
+            ItemMeta anvilMeta = anvil.getItemMeta();
             ItemMeta arrowMeta = arrow.getItemMeta();
             ItemMeta hopperMeta = hopper.getItemMeta();
 
             // Lores
+            ArrayList<String> anvilLore = new ArrayList<>();
             ArrayList<String> arrowLore = new ArrayList<>();
             ArrayList<String> hopperLore = new ArrayList<>();
 
@@ -83,6 +96,13 @@ public class Inventories {
                 arrow.setItemMeta(arrowMeta);
                 inv.setItem(48, arrow);
             }
+
+            // search
+            anvilMeta.setDisplayName("§eSearch");
+            anvilLore.add("§7Click to search for a home");
+            anvilMeta.setLore(anvilLore);
+            anvil.setItemMeta(anvilMeta);
+            inv.setItem(47, anvil);
 
             // sorting
             String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type");
@@ -770,7 +790,6 @@ public class Inventories {
             nametagLore.add("§7" + name);
             nametagLore.add("§7--------------------");
             nametagLore.add("§7Click to change");
-            nametagLore.add("§6§lComming Soon");
             nametagMeta.setLore(nametagLore);
             nametag.setItemMeta(nametagMeta);
             inv.setItem(10, nametag);
@@ -1000,8 +1019,7 @@ public class Inventories {
 
     private static ArrayList<String> sortPlayerList(ArrayList<String> unsortedList, Player p) {
         switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type")) {
-            case "state":
-
+            case "state" -> {
                 ArrayList<String> sortedList = new ArrayList<>();
                 for (String player : unsortedList) {
                     if (Bukkit.getOnlinePlayers().contains(player)) {
@@ -1011,15 +1029,14 @@ public class Inventories {
                 unsortedList.removeAll(sortedList);
                 sortedList.addAll(unsortedList);
                 unsortedList = sortedList;
-
                 if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction").equals("falling"))
                     Collections.reverse(unsortedList);
-                break;
-            case "name":
+            }
+            case "name" -> {
                 Collections.sort(unsortedList);
                 if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction").equals("falling"))
                     Collections.reverse(unsortedList);
-                break;
+            }
         }
         return unsortedList;
     }
