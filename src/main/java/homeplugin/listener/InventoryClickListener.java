@@ -544,6 +544,11 @@ public class InventoryClickListener implements Listener {
                                         Inventories.openHomeList(p, p);
                                     }
                                     case "name" -> {
+                                        cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type", "favorite");
+                                        Main.getPlugin().saveConfig();
+                                        Inventories.openHomeList(p, p);
+                                    }
+                                    case "favorite" -> {
                                         cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type", "date");
                                         Main.getPlugin().saveConfig();
                                         Inventories.openHomeList(p, p);
@@ -580,19 +585,24 @@ public class InventoryClickListener implements Listener {
                                 ItemStack paper = new ItemStack(Material.PAPER);
                                 ItemMeta paperMeta = paper.getItemMeta();
                                 paperMeta.setDisplayName("§akeyword");
-                                if(!Main.search.get(p).isEmpty()) paperMeta.setDisplayName("§a" + Main.search.get(p));
+                                if (!Main.search.get(p).isEmpty()) paperMeta.setDisplayName("§a" + Main.search.get(p));
                                 paper.setItemMeta(paperMeta);
 
                                 builder.onComplete((player, text) -> {
-                                    Main.search.put(player, text);
-                                    return AnvilGUI.Response.close();
+                                    ArrayList<String> keywords = Main.search.get(p);
+                                    if (!keywords.contains(text)) {
+                                        keywords.add(text);
+                                        Main.search.put(player, keywords);
+                                        return AnvilGUI.Response.close();
+                                    }
+                                    return null;
                                 });
                                 builder.onClose(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openHomeList(p, p), 1));
                                 builder.onLeftInputClick(player -> Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openHomeList(p, p), 1));
 
                                 builder.itemLeft(paper);
                                 builder.text("keyword");
-                                if(!Main.search.get(p).isEmpty()) builder.text(Main.search.get(p));
+                                if (!Main.search.get(p).isEmpty()) builder.text(Main.search.get(p).get(0));
 
                                 builder.title("Enter keyword");
 
@@ -601,7 +611,7 @@ public class InventoryClickListener implements Listener {
 
                             // remove search
                             else if (!Main.search.get(p).isEmpty() && e.getClick() == ClickType.RIGHT) {
-                                Main.search.put(p, "");
+                                Main.search.put(p, new ArrayList<>());
                                 Inventories.openHomeList(p, p);
                             }
                         }
@@ -617,7 +627,7 @@ public class InventoryClickListener implements Listener {
 
                             String visit_success = cfg.getString("Settings.ChatMessages.Visit.Success");
 
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replace("§a", "").replace(" §e⭐", "");
                             Home home = new Home(name, p);
 
                             if (home.isExisting()) {
@@ -629,9 +639,9 @@ public class InventoryClickListener implements Listener {
                         // right-click
                         else if (e.getClick() == ClickType.RIGHT) {
 
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replace("§a", "").replace(" §e⭐", "");
                             Home home = new Home(name, p);
-                            Main.lastGui.put(p, e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", ""));
+                            Main.lastGui.put(p, e.getCurrentItem().getItemMeta().getDisplayName().replace("§a", "").replace(" §e⭐", ""));
                             Main.currentHome.put(p, home);
                             Inventories.openInventory(InventoryType.HOME, p);
                         }
@@ -639,17 +649,17 @@ public class InventoryClickListener implements Listener {
                         // middle-click
                         else if (e.getClick() == ClickType.MIDDLE) {
 
-                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replaceAll("§a", "");
+                            ArrayList<String> favoriteHomes = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes"));
+                            String name = e.getCurrentItem().getItemMeta().getDisplayName().replace("§a", "").replace(" §e⭐", "");
                             Home home = new Home(name, p);
 
-                            if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
-                                Main.lastGui.put(p, e.getView().getTitle());
-                                Main.currentHome.put(p, home);
-                                Inventories.openInventory(InventoryType.DELETE, p);
-                            } else {
-                                home.delete();
-                                Inventories.openHomeList(p, p);
-                            }
+                            if (!favoriteHomes.contains(home.getName())) favoriteHomes.add(home.getName());
+                            else favoriteHomes.remove(home.getName());
+                            cfg.set("Players." + p.getUniqueId() + ".FavoriteHomes", favoriteHomes);
+                            Main.getPlugin().saveConfig();
+
+                            Player target = (Player) e.getInventory().getHolder();
+                            Inventories.openHomeList(p, target);
                         }
                     }
                 }
@@ -675,42 +685,6 @@ public class InventoryClickListener implements Listener {
                     else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSettings")) {
 
                         Inventories.openInventory(InventoryType.SETTINGS, p);
-                    }
-
-                    // sorting
-                    else if (e.getCurrentItem().getItemMeta().getDisplayName().equals("§eSorting")) {
-
-                        // type
-                        if (e.getClick() == ClickType.LEFT) {
-                            switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.Type")) {
-                                case "date" -> {
-                                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.Type", "name");
-                                    Main.getPlugin().saveConfig();
-                                    Inventories.openHomeList(p, target);
-                                }
-                                case "name" -> {
-                                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.Type", "date");
-                                    Main.getPlugin().saveConfig();
-                                    Inventories.openHomeList(p, target);
-                                }
-                            }
-                        }
-
-                        // direction
-                        else if (e.getClick() == ClickType.RIGHT) {
-                            switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.Direction")) {
-                                case "rising" -> {
-                                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.Direction", "falling");
-                                    Main.getPlugin().saveConfig();
-                                    Inventories.openHomeList(p, target);
-                                }
-                                case "falling" -> {
-                                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.Direction", "rising");
-                                    Main.getPlugin().saveConfig();
-                                    Inventories.openHomeList(p, target);
-                                }
-                            }
-                        } else e.setCancelled(true);
                     }
 
                     // no homes

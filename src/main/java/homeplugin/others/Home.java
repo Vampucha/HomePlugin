@@ -45,8 +45,13 @@ public class Home {
     }
 
     public void setName(String name) {
-
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Name", name);
+        ArrayList<String> favorites = new ArrayList<>(cfg.getStringList("Players." + owner.getUniqueId() + ".FavoriteHomes"));
+        if(favorites.contains(this.name)) {
+            favorites.remove(this.name);
+            favorites.add(name);
+            cfg.set("Players." + owner.getUniqueId() + ".FavoriteHomes", favorites);
+        }
         Main.getPlugin().saveConfig();
     }
 
@@ -145,6 +150,9 @@ public class Home {
     }
 
     public void delete() {
+        ArrayList<String> favorites = new ArrayList<>(cfg.getStringList("Players." + owner.getUniqueId() + ".FavoriteHomes"));
+        favorites.remove(name);
+        cfg.set("Players." + owner.getUniqueId() + ".FavoriteHomes", favorites);
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID(), null);
         Main.getPlugin().saveConfig();
     }

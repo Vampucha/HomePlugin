@@ -131,27 +131,36 @@ public class Inventories {
                     ItemMeta iconMeta = icon.getItemMeta();
                     ArrayList<String> iconLore = new ArrayList<>();
 
-                    Location loc = home.getLocation();
-                    double x = (double) Math.round(loc.getX() * 100) / 100;
-                    double y = (double) Math.round(loc.getY() * 100) / 100;
-                    double z = (double) Math.round(loc.getZ() * 100) / 100;
-
                     if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
+                        Location loc = home.getLocation();
+                        double x = (double) Math.round(loc.getX() * 100) / 100;
+                        double y = (double) Math.round(loc.getY() * 100) / 100;
+                        double z = (double) Math.round(loc.getZ() * 100) / 100;
+
                         iconLore.add("§7World: " + loc.getWorld().getName());
                         iconLore.add("§7X: " + x + " Y: " + y + " Z: " + z);
                         iconLore.add("§7--------------------");
                     }
+
                     if (p == target) {
+
+                        ArrayList<String> favoriteHomes = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes"));
                         iconLore.add("§7Left-click to visit");
                         iconLore.add("§7Right-click to edit");
-                        iconLore.add("§7Mid-click to delete");
+                        if (favoriteHomes.contains(home.getName())) {
+                            iconMeta.setDisplayName("§a" + home.getName() + " §e⭐");
+                            iconLore.add("§7Middle-click remove favorite");
+                        } else {
+                            iconMeta.setDisplayName("§a" + home.getName());
+                            iconLore.add("§7Middle-click add favorite");
+                        }
+
                     } else if (cfg.getBoolean("Players." + target.getUniqueId() + ".Settings.Visitors.Enabled")
                             || cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.Whitelist").contains(p.getName())
                             || !cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.BlackList").contains(p.getName()))
                         iconLore.add("§7Click to visit");
                     else iconLore.add("§cYou can't visit the homes of this player");
 
-                    iconMeta.setDisplayName("§a" + home.getName());
                     iconMeta.setLore(iconLore);
                     icon.setItemMeta(iconMeta);
 
@@ -996,8 +1005,10 @@ public class Inventories {
         ArrayList<String> searchResults = new ArrayList<>();
         if (!Main.search.get(p).isEmpty()) {
             for (String name : list) {
-                if (name.toLowerCase().contains(Main.search.get(p).toLowerCase())) {
-                    searchResults.add(name);
+                for (String keyword : Main.search.get(p)) {
+                    if (name.toLowerCase().contains(keyword.toLowerCase())) {
+                        searchResults.add(name);
+                    }
                 }
             }
         } else return list;
@@ -1012,6 +1023,18 @@ public class Inventories {
                 break;
             case "name":
                 Collections.sort(list);
+                if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction").equals("falling"))
+                    Collections.reverse(list);
+                break;
+            case "favorite":
+
+                ArrayList<String> newList = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes"));
+                list.removeAll(newList);
+                Collections.sort(list);
+                Collections.sort(newList);
+                newList.addAll(list);
+                list = newList;
+
                 if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction").equals("falling"))
                     Collections.reverse(list);
                 break;

@@ -28,7 +28,7 @@ public class Main extends JavaPlugin {
     public static HashMap<Player, Integer> page = new HashMap<>();
     public static HashMap<Player, String> lastGui = new HashMap<>();
     public static HashMap<Player, Home> currentHome = new HashMap<>();
-    public static HashMap<Player, String> search = new HashMap<>();
+    public static HashMap<Player, ArrayList<String>> search = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -101,7 +101,7 @@ public class Main extends JavaPlugin {
         page.put(p, 1);
         lastGui.put(p, null);
         currentHome.put(p, null);
-        search.put(p, "");
+        search.put(p, new ArrayList<>());
 
         if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
             cfg.set("Players." + p.getUniqueId() + ".Settings.ShowInformation", true);
@@ -155,6 +155,12 @@ public class Main extends JavaPlugin {
 
         if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction")) {
             cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction", "rising");
+            getPlugin().saveConfig();
+        }
+
+        // favorite homes
+        if (!cfg.contains("Players." + p.getUniqueId() + ".FavoriteHomes")) {
+            cfg.set("Players." + p.getUniqueId() + ".FavoriteHomes", null);
             getPlugin().saveConfig();
         }
     }
