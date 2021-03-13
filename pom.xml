@@ -22,7 +22,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>15</java.version>
-        <outputFilePath>D:/Minecraft/servers/Server_1.16.4/plugins/HomePlugin.jar</outputFilePath>
+        <outputFilePath>D:/Minecraft/server/Server_1.16.4/plugins/HomePlugin.jar</outputFilePath>
     </properties>
 
     <dependencies>
@@ -37,10 +37,14 @@
             <version>1.16.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.5</version>
+        </dependency>
     </dependencies>
 
     <build>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -63,7 +67,7 @@
                         </goals>
                         <configuration>
                             <minimizeJar>true</minimizeJar>
-                            <outputFile>D:/Minecraft/servers/Server_1.16.4/plugins/HomePlugin.jar</outputFile>
+                            <outputFile>D:/Minecraft/server/Server_1.16.4/plugins/HomePlugin.jar</outputFile>
                         </configuration>
                     </execution>
                 </executions>

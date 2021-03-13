@@ -8,7 +8,6 @@ import org.bukkit.entity.Player;
 
 import homeplugin.main.Main;
 import homeplugin.others.Inventories;
-import homeplugin.others.Inventories.InventoryType;
 
 public class HomesCommand implements CommandExecutor {
 
@@ -24,6 +23,8 @@ public class HomesCommand implements CommandExecutor {
                     if (p.hasPermission("hp.homes")) {
 
                         Main.page.put(p, 1);
+                        Main.previousPage.get(p).clear();
+                        Main.previousPage.get(p).add(null);
                         Inventories.openHomeList(p, p);
 
                     } else p.sendMessage(Main.no_perm);
@@ -40,13 +41,16 @@ public class HomesCommand implements CommandExecutor {
                     // settings
                     else if (args[0].equalsIgnoreCase("settings")) {
                         Main.lastGui.put(p, null);
-                        Inventories.openInventory(InventoryType.SETTINGS, p);
+                        Inventories.openSettings(p);
 
                     } else {
                         if (p.hasPermission("hp.homes.others")) {
                             Player target = Bukkit.getPlayer(args[0]);
                             if (Bukkit.getOnlinePlayers().contains(target)) {
 
+                                Main.page.put(p, 1);
+                                Main.previousPage.get(p).clear();
+                                Main.previousPage.get(p).add(null);
                                 Inventories.openHomeList(p, target);
 
                             } else p.sendMessage(Main.prefix + "§6" + args[0] + " §cis not online!");

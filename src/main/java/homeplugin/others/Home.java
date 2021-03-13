@@ -18,6 +18,10 @@ public class Home {
     String name;
     Player owner;
 
+    public enum HomeType {
+        PRIVATE, PASSWORD, PUBLIC
+    }
+
     public Home(String homeName, Player homeOwner) {
         name = homeName;
         owner = homeOwner;
@@ -47,7 +51,7 @@ public class Home {
     public void setName(String name) {
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Name", name);
         ArrayList<String> favorites = new ArrayList<>(cfg.getStringList("Players." + owner.getUniqueId() + ".FavoriteHomes"));
-        if(favorites.contains(this.name)) {
+        if (favorites.contains(this.name)) {
             favorites.remove(this.name);
             favorites.add(name);
             cfg.set("Players." + owner.getUniqueId() + ".FavoriteHomes", favorites);
@@ -55,8 +59,10 @@ public class Home {
         Main.getPlugin().saveConfig();
     }
 
-    public String getName() {
-        return name;
+    public void setType(HomeType type) {
+        String homeType = type.toString().toLowerCase();
+        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Type", homeType);
+        Main.getPlugin().saveConfig();
     }
 
     public void setIcon(ItemStack icon) {
@@ -64,24 +70,9 @@ public class Home {
         Main.getPlugin().saveConfig();
     }
 
-    public ItemStack getIcon() {
-
-        ItemStack icon = new ItemStack(Material.GRASS_BLOCK);
-
-        try {
-            icon = cfg.getItemStack("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Icon");
-        } catch (Exception ignored) {
-        }
-        return icon;
-    }
-
     public void setLocation(Location loc) {
         cfg.set("Players." + owner.getLocation() + ".Homes." + getID() + ".Location", loc);
         Main.getPlugin().saveConfig();
-    }
-
-    public Location getLocation() {
-        return cfg.getLocation("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Location");
     }
 
     private String findID() {
@@ -94,22 +85,6 @@ public class Home {
         for (int i = 0; i < homes.size() + 1; i++) {
             String home = "Home" + i;
             if (!homes.contains(home)) {
-                id = home;
-                break;
-            }
-        }
-        return id;
-    }
-
-    private String getID() {
-
-        String id = "";
-        ArrayList<String> homes = new ArrayList<>();
-        if (cfg.contains("Players." + owner.getUniqueId() + ".Homes"))
-            homes.addAll(cfg.getConfigurationSection("Players." + owner.getUniqueId() + ".Homes").getKeys(false));
-
-        for (String home : homes) {
-            if (cfg.getString("Players." + owner.getUniqueId() + ".Homes." + home + ".Name").equals(name)) {
                 id = home;
                 break;
             }
@@ -155,5 +130,53 @@ public class Home {
         cfg.set("Players." + owner.getUniqueId() + ".FavoriteHomes", favorites);
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID(), null);
         Main.getPlugin().saveConfig();
+    }
+
+
+    public ItemStack getIcon() {
+
+        ItemStack icon = new ItemStack(Material.GRASS_BLOCK);
+
+        try {
+            icon = cfg.getItemStack("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Icon");
+        } catch (Exception ignored) {
+        }
+        return icon;
+    }
+
+    private String getID() {
+
+        String id = "";
+        ArrayList<String> homes = new ArrayList<>();
+        if (cfg.contains("Players." + owner.getUniqueId() + ".Homes"))
+            homes.addAll(cfg.getConfigurationSection("Players." + owner.getUniqueId() + ".Homes").getKeys(false));
+
+        for (String home : homes) {
+            if (cfg.getString("Players." + owner.getUniqueId() + ".Homes." + home + ".Name").equals(name)) {
+                id = home;
+                break;
+            }
+        }
+        return id;
+    }
+
+    public Location getLocation() {
+        return cfg.getLocation("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Location");
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public HomeType getType() {
+        HomeType type = HomeType.PUBLIC;
+        if (cfg.getString("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Type") != null) {
+            switch (cfg.getString("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Type")) {
+                case "private" -> type = HomeType.PRIVATE;
+                case "password" -> type = HomeType.PASSWORD;
+                case "public" -> type = HomeType.PUBLIC;
+            }
+        }
+        return type;
     }
 }

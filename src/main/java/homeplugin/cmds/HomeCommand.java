@@ -1,6 +1,5 @@
 package homeplugin.cmds;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,7 +11,6 @@ import org.bukkit.inventory.ItemStack;
 import homeplugin.main.Main;
 import homeplugin.others.Home;
 import homeplugin.others.Inventories;
-import homeplugin.others.Inventories.InventoryType;
 
 public class HomeCommand implements CommandExecutor {
 
@@ -26,7 +24,6 @@ public class HomeCommand implements CommandExecutor {
         String delete_success = cfg.getString("Settings.ChatMessages.Delete.Success");
         String delete_notexisting = cfg.getString("Settings.ChatMessages.Delete.NotExisting");
         String modify_name_success = cfg.getString("Settings.ChatMessages.Modify.Name.Success");
-        String modify_location_success = cfg.getString("Settings.ChatMessages.Modify.Location.Success");
         String modify_notexisting = cfg.getString("Settings.ChatMessages.Modify.NotExisting");
         String visit_success = cfg.getString("Settings.ChatMessages.Visit.Success");
         String visit_notexisting = cfg.getString("Settings.ChatMessages.Visit.NotExisting");
@@ -69,7 +66,10 @@ public class HomeCommand implements CommandExecutor {
                             Home home = new Home(name, p);
                             if (home.isExisting()) {
                                 if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
-                                    Inventories.openInventory(InventoryType.DELETE, p);
+                                    Inventories.openConfirmation(p, player -> {
+                                        home.delete();
+                                        p.closeInventory();
+                                    });
                                     Main.lastGui.put(p, null);
                                     Main.currentHome.put(p, home);
                                 } else {
@@ -100,17 +100,9 @@ public class HomeCommand implements CommandExecutor {
                                 // location
                                 else if (args[2].equalsIgnoreCase("location")) {
 
-                                    Location loc = p.getLocation();
-                                    if (!cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.Orientation")) {
-                                        loc.setYaw(0);
-                                        loc.setPitch(0);
-                                    }
-                                    home.setLocation(loc);
-                                    double x = (double) Math.round(loc.getX() * 100) / 100;
-                                    double y = (double) Math.round(loc.getY() * 100) / 100;
-                                    double z = (double) Math.round(loc.getZ() * 100) / 100;
-                                    p.sendMessage(Main.prefix + modify_location_success.replaceAll
-                                            ("%x%", x + "").replaceAll("%y%", y + "").replaceAll("%z%", z + ""));
+                                    Main.lastGui.put(p, null);
+                                    Main.currentHome.put(p, home);
+                                    Inventories.openLocationGui(p, home);
                                 }
 
                             } else p.sendMessage(Main.prefix + modify_notexisting.replaceAll("%name%", homeName));

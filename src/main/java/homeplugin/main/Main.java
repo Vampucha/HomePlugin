@@ -2,6 +2,7 @@ package homeplugin.main;
 
 import homeplugin.listener.PlayerJoinListener;
 import homeplugin.others.Home;
+import homeplugin.others.UI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -11,7 +12,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import homeplugin.cmds.HomeCommand;
 import homeplugin.cmds.HomesCommand;
-import homeplugin.listener.InventoryClickListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +27,7 @@ public class Main extends JavaPlugin {
 
     public static HashMap<Player, Integer> page = new HashMap<>();
     public static HashMap<Player, String> lastGui = new HashMap<>();
+    public static HashMap<Player, ArrayList<UI.Page>> previousPage = new HashMap<>();
     public static HashMap<Player, Home> currentHome = new HashMap<>();
     public static HashMap<Player, ArrayList<String>> search = new HashMap<>();
 
@@ -38,7 +39,6 @@ public class Main extends JavaPlugin {
 
         PluginManager pm = Bukkit.getPluginManager();
 
-        pm.registerEvents(new InventoryClickListener(), this);
         pm.registerEvents(new PlayerJoinListener(), this);
 
         getCommand("home").setExecutor(new HomeCommand());
@@ -102,6 +102,7 @@ public class Main extends JavaPlugin {
         lastGui.put(p, null);
         currentHome.put(p, null);
         search.put(p, new ArrayList<>());
+        previousPage.put(p, new ArrayList<>());
 
         if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
             cfg.set("Players." + p.getUniqueId() + ".Settings.ShowInformation", true);
@@ -155,6 +156,17 @@ public class Main extends JavaPlugin {
 
         if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction")) {
             cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction", "rising");
+            getPlugin().saveConfig();
+        }
+
+        // search-keys
+        if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type")) {
+            cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type", "name");
+            getPlugin().saveConfig();
+        }
+
+        if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction")) {
+            cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction", "rising");
             getPlugin().saveConfig();
         }
 
