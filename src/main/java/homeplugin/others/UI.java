@@ -10,6 +10,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
@@ -142,6 +143,7 @@ public class UI {
         String name;
         ArrayList<String> lore;
         Material material;
+        ItemMeta meta;
         Consumer<Player> leftClickAction;
         Consumer<Player> rightClickAction;
         Consumer<Player> middleClickAction;
@@ -164,6 +166,10 @@ public class UI {
             this.slot = slot;
         }
 
+        public void setItemMeta(ItemMeta meta) {
+            this.meta = meta;
+        }
+
         public void onLeftClick(Consumer<Player> leftClickAction) {
             this.leftClickAction = leftClickAction;
         }
@@ -180,6 +186,13 @@ public class UI {
             this.clickAction = clickAction;
         }
 
+
+        public ItemMeta getItemMeta() {
+            ItemStack item = new ItemStack(Material.STONE);
+            ItemMeta meta = item.getItemMeta();
+            if (this.meta != null) meta = this.meta;
+            return meta;
+        }
 
         public String getName() {
             return name;
@@ -221,9 +234,18 @@ public class UI {
         for (Item item : items) {
 
             ItemStack itemStack = new ItemStack(item.getMaterial());
+
             ItemMeta itemMeta = itemStack.getItemMeta();
+            if (item.getItemMeta() != null) itemMeta = item.getItemMeta();
             itemMeta.setDisplayName(item.getName());
             itemMeta.setLore(item.getLore());
+            itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+            itemMeta.addItemFlags(ItemFlag.HIDE_DESTROYS);
+            itemMeta.addItemFlags(ItemFlag.HIDE_DYE);
+            itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            itemMeta.addItemFlags(ItemFlag.HIDE_PLACED_ON);
+            itemMeta.addItemFlags(ItemFlag.HIDE_POTION_EFFECTS);
+            itemMeta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
             itemStack.setItemMeta(itemMeta);
 
             inv.setItem(item.getSlot(), itemStack);

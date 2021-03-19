@@ -1,5 +1,6 @@
 package homeplugin.cmds;
 
+import homeplugin.others.ChatMessage;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -41,9 +42,8 @@ public class HomeCommand implements CommandExecutor {
 
                         if (home.isExisting()) {
                             home.visit(p);
-                            p.sendMessage(Main.prefix + visit_success.replaceAll("%name%", name));
-                        } else
-                            p.sendMessage(Main.prefix + visit_notexisting.replaceAll("%name%", name));
+                            ChatMessage.sendMessage(p, visit_success.replaceAll("%name%", name), true);
+                        } else ChatMessage.sendMessage(p, visit_notexisting.replaceAll("%name%", name), true);
                     }
 
                     // args 2
@@ -56,8 +56,9 @@ public class HomeCommand implements CommandExecutor {
                             if (!home.isExisting()) {
                                 home.create();
                                 p.sendMessage(Main.prefix + create_success.replaceAll("%name%", name));
+                                ChatMessage.sendMessage(p, create_success.replaceAll("%name%", name), true);
                             } else
-                                p.sendMessage(Main.prefix + create_isexisting.replaceAll("%name%", name));
+                                ChatMessage.sendMessage(p, create_isexisting.replaceAll("%name%", name), true);
                         }
 
                         // delete
@@ -74,9 +75,9 @@ public class HomeCommand implements CommandExecutor {
                                     Main.currentHome.put(p, home);
                                 } else {
                                     home.delete();
-                                    p.sendMessage(Main.prefix + delete_success.replaceAll("%name%", name));
+                                    ChatMessage.sendMessage(p, delete_success.replaceAll("%name%", name), true);
                                 }
-                            } else p.sendMessage(Main.prefix + delete_notexisting.replaceAll("%name%", name));
+                            } else ChatMessage.sendMessage(p, delete_notexisting.replaceAll("%name%", name), true);
                         }
                     }
 
@@ -123,7 +124,7 @@ public class HomeCommand implements CommandExecutor {
                                 if (args[2].equalsIgnoreCase("name")) {
                                     String name = args[3];
                                     home.setName(name);
-                                    p.sendMessage(Main.prefix + modify_name_success.replaceAll("%name%", name));
+                                    ChatMessage.sendMessage(p, modify_name_success.replaceAll("%name%", name), true);
                                 }
 
                                 // icon
@@ -132,21 +133,19 @@ public class HomeCommand implements CommandExecutor {
                                     try {
                                         ItemStack icon = new ItemStack(Material.getMaterial(name.toUpperCase()));
                                         home.setIcon(icon);
-                                        p.sendMessage(Main.prefix);
+                                        ChatMessage.sendMessage(p, "", true);
                                     } catch (Exception e) {
-                                        p.sendMessage(Main.prefix);
+                                        ChatMessage.sendMessage(p, "", true);
                                     }
                                 }
 
-                            } else p.sendMessage(Main.prefix + modify_notexisting.replaceAll("%name%", homeName));
+                            } else ChatMessage.sendMessage(p, modify_notexisting.replaceAll("%name%", homeName), true);
                         }
                     }
-
                 } else
                     p.sendMessage(Main.no_perm);
             }
         }
-
         return false;
     }
 }

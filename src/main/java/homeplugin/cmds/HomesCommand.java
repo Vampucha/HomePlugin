@@ -1,5 +1,6 @@
 package homeplugin.cmds;
 
+import homeplugin.others.ChatMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,9 +23,10 @@ public class HomesCommand implements CommandExecutor {
 
                     if (p.hasPermission("hp.homes")) {
 
-                        Main.page.put(p, 1);
-                        Main.previousPage.get(p).clear();
-                        Main.previousPage.get(p).add(null);
+                        Main.search.get(p).clear();
+                        Main.pageHistory.get(p).clear();
+                        Main.pageHistory.get(p).add(null);
+                        Main.page.get(p).clear();
                         Inventories.openHomeList(p, p);
 
                     } else p.sendMessage(Main.no_perm);
@@ -34,13 +36,14 @@ public class HomesCommand implements CommandExecutor {
                     if (args[0].equalsIgnoreCase("reload")) {
                         if (p.hasPermission("hp.reload")) {
                             Main.getPlugin().reloadConfig();
-                            p.sendMessage(Main.prefix + "§aYou successfully reloaded the HomePlugin");
-                        } else p.sendMessage(Main.no_perm);
+                            ChatMessage.sendMessage(p, "§aYou successfully reloaded the HomePlugin", true);
+                        } else ChatMessage.sendMessage(p, Main.no_perm, false);
                     }
 
                     // settings
                     else if (args[0].equalsIgnoreCase("settings")) {
-                        Main.lastGui.put(p, null);
+                        Main.pageHistory.get(p).clear();
+                        Main.pageHistory.get(p).add(null);
                         Inventories.openSettings(p);
 
                     } else {
@@ -48,13 +51,14 @@ public class HomesCommand implements CommandExecutor {
                             Player target = Bukkit.getPlayer(args[0]);
                             if (Bukkit.getOnlinePlayers().contains(target)) {
 
-                                Main.page.put(p, 1);
-                                Main.previousPage.get(p).clear();
-                                Main.previousPage.get(p).add(null);
+                                Main.search.get(p).clear();
+                                Main.pageHistory.get(p).clear();
+                                Main.pageHistory.get(p).add(null);
+                                Main.page.get(p).clear();
                                 Inventories.openHomeList(p, target);
 
-                            } else p.sendMessage(Main.prefix + "§6" + args[0] + " §cis not online!");
-                        } else p.sendMessage(Main.no_perm);
+                            } else ChatMessage.sendMessage(p, "§6" + args[0] + " §cis not online!", true);
+                        } else ChatMessage.sendMessage(p, Main.no_perm, false);
                     }
                 }
             }

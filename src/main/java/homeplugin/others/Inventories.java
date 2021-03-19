@@ -8,7 +8,6 @@ import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import homeplugin.main.Main;
 import org.bukkit.util.Consumer;
@@ -19,13 +18,30 @@ public class Inventories {
 
     public static void openHomeList(Player p, Player target) {
 
-        int currentPage = Main.page.get(p);
-
         UI.Page page = new UI.Page();
 
         page.setTitle("Homes of " + target.getName());
         page.setSize(54);
         page.setHolder(target);
+
+        int currentPage = getCurrentPage(p, page);
+
+        // close / back
+        UI.Item close = new UI.Item();
+        ArrayList<String> closeLore = new ArrayList<>();
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
+            close.setName("§eBack");
+            closeLore.add("§7Click to go back");
+            close.onClick(player -> openPreviousPage(p));
+        } else {
+            close.setName("§eClose");
+            closeLore.add("§7Click to close");
+            close.onClick(player -> p.closeInventory());
+        }
+        close.setMaterial(Material.BARRIER);
+        close.setLore(closeLore);
+        close.setSlot(49);
+        page.addItem(close);
 
         // settings
         UI.Item settings = new UI.Item();
@@ -34,9 +50,9 @@ public class Inventories {
         ArrayList<String> settingsLore = new ArrayList<>();
         settingsLore.add("§7Click to open the settings");
         settings.setLore(settingsLore);
-        settings.setSlot(45);
+        settings.setSlot(52);
         settings.onClick(player -> {
-            Main.previousPage.get(p).add(page);
+            Main.pageHistory.get(p).add(page);
             openSettings(p);
         });
         page.addItem(settings);
@@ -51,25 +67,28 @@ public class Inventories {
         create.setSlot(53);
         create.onClick(player -> {
 
-            Main.previousPage.get(p).add(page);
+            Main.pageHistory.get(p).add(page);
 
             AnvilGUI.Builder builder = new AnvilGUI.Builder();
             builder.plugin(Main.getPlugin());
 
             ItemStack icon = findIcon(p);
-            ItemMeta iconMeta = icon.getItemMeta();
-            iconMeta.setDisplayName("§aNew Home");
-            icon.setItemMeta(iconMeta);
+            builder.text("§aNew Home");
 
+            builder.onLeftInputClick(player2 -> openPreviousPage(p));
             builder.onComplete((player2, text) -> {
-                Home home = new Home(text, player);
-                home.create();
-                Main.currentHome.put(player, home);
-                Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> Inventories.openIconList(p), 2);
-                return AnvilGUI.Response.close();
+                if (!getHomes(p).contains(text)) {
+                    Home home = new Home(text, player);
+                    home.create();
+                    Main.currentHome.put(player, home);
+                    Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
+                        Main.pageHistory.get(p).add(page);
+                        openIconList(p);
+                    }, 2);
+                    return AnvilGUI.Response.close();
+                } else return AnvilGUI.Response.text("already existing");
             });
             builder.onClose(player2 -> openPreviousPage(p));
-            builder.onLeftInputClick(player2 -> openPreviousPage(p));
 
             builder.title("Enter name");
 
@@ -82,23 +101,151 @@ public class Inventories {
 
         if (getHomes(target) != null && getHomes(target).size() > 0) {
 
-            ArrayList<String> homes = sortHomeList(target);
-            homes = searchResults(homes, p);
+            String type = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type");
+            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction");
+            ArrayList<String> homes = getHomes(target);
+            homes = searchResults(homes, p, page);
+
+            if (p == target) {
+                for (String home : homes) {
+                    if (cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes").contains(home)) {
+                        int index = homes.indexOf(home);
+                        homes.set(index, home + " §e⭐");
+                    }
+                }
+            }
+            homes = sort(homes, type, direction);
+
+            // search
+            UI.Item search = new UI.Item();
+            search.setName("§eSearch");
+            search.setMaterial(Material.COMPASS);
+            ArrayList<String> searchLore = new ArrayList<>();
+
+            // click event / lore
+            if (!getSearchKeys(p, page).isEmpty()) {
+
+                // add keyword
+                search.onLeftClick(player -> {
+
+                    Main.pageHistory.get(p).add(page);
+
+                    AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                    builder.plugin(Main.getPlugin());
+
+                    ItemStack paper = new ItemStack(Material.PAPER);
+
+                    builder.onComplete((player2, text) -> {
+                        if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                            addSearchKey(p, getPageHistory(p, 1), text);
+                            return AnvilGUI.Response.close();
+                        }
+                        return AnvilGUI.Response.text("already existing");
+                    });
+
+                    builder.onClose(player2 -> openPreviousPage(p));
+                    builder.onLeftInputClick(player2 -> openPreviousPage(p));
+
+                    builder.itemLeft(paper);
+                    builder.text("keyword");
+
+                    builder.title("Enter keyword");
+                    builder.open(p);
+                });
+
+                // manage keywords
+                search.onRightClick(player -> {
+                    Main.pageHistory.get(p).add(page);
+                    Inventories.openSearchKeys(p);
+                });
+
+                // clear
+                search.onMiddleClick(player -> {
+                    clearSearchKeys(p, page);
+                    reloadInventory(p);
+                });
+
+                // lore-keywords
+                if (getSearchKeys(p, page).size() == 1) searchLore.add("§7Keyword: " + getSearchKey(p, page, 0));
+                else {
+
+                    StringBuilder keywords = new StringBuilder("§7Keywords: ");
+                    for (int i = 0; i < getSearchKeys(p, page).size(); i++) {
+                        if (i <= 2) {
+                            if (i != 0) keywords.append(", ");
+                            keywords.append(getSearchKey(p, page, i));
+                        } else break;
+                    }
+
+                    if (getSearchKeys(p, page).size() > 3)
+                        keywords.append(" (+").append(getSearchKeys(p, page).size() - 3).append(")");
+
+                    searchLore.add(keywords.toString());
+                }
+
+                // lore-keybinds
+                searchLore.add("§7--------------------");
+                searchLore.add("§7Left-click to add a keyword");
+                searchLore.add("§7Right-click to manage the keywords");
+                searchLore.add("§7Middle-click to clear the search");
+
+            } else {
+                search.onClick(player -> {
+
+                    Main.pageHistory.get(p).add(page);
+
+                    AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                    builder.plugin(Main.getPlugin());
+
+                    ItemStack paper = new ItemStack(Material.PAPER);
+
+                    builder.onComplete((player2, text) -> {
+                        if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                            addSearchKey(p, getPageHistory(p, 1), text);
+                            return AnvilGUI.Response.close();
+                        }
+                        return AnvilGUI.Response.text("already existing");
+                    });
+
+                    builder.onClose(player2 -> openPreviousPage(p));
+                    builder.onLeftInputClick(player2 -> openPreviousPage(p));
+
+                    builder.itemLeft(paper);
+                    builder.text("keyword");
+
+                    builder.title("Enter keyword");
+                    builder.open(p);
+                });
+                searchLore.add("§7Click to search for a home");
+            }
+            search.setLore(searchLore);
+            search.setSlot(45);
+            page.addItem(search);
+
+            // filter
+            UI.Item filter = new UI.Item();
+            ArrayList<String> filterLore = new ArrayList<>();
+            filter.setName("§eFilter");
+            filter.setMaterial(Material.HOPPER);
+            filterLore.add("§7Filter: no filter");
+            filterLore.add("§7--------------------");
+            filterLore.add("§7Click to edit the filter");
+            filterLore.add("§6§lComming Soon");
+            filter.setLore(filterLore);
+            filter.setSlot(46);
+            page.addItem(filter);
 
             // sorting
-            String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type");
-            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction");
-
             UI.Item sort = new UI.Item();
             sort.setName("§eSorting");
-            sort.setMaterial(Material.HOPPER);
+            sort.setMaterial(Material.FILLED_MAP);
             ArrayList<String> sortLore = new ArrayList<>();
-            sortLore.add("§7Current: " + sorting + " | " + direction);
+            sortLore.add("§7Current: " + type + " | " + direction);
             sortLore.add("§7--------------------");
             sortLore.add("§7Left-click to change type");
             sortLore.add("§7Right-click to change direction");
             sort.setLore(sortLore);
-            sort.setSlot(46);
+            sort.setSlot(47);
             sort.onLeftClick(player -> {
                 switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type")) {
                     case "date" -> {
@@ -134,126 +281,6 @@ public class Inventories {
             });
             page.addItem(sort);
 
-            // search
-            UI.Item search = new UI.Item();
-            search.setName("§eSearch");
-            search.setMaterial(Material.ANVIL);
-            ArrayList<String> searchLore = new ArrayList<>();
-
-            // click event / lore
-            if (!Main.search.get(p).isEmpty()) {
-
-                // add keyword
-                search.onLeftClick(player -> {
-
-                    Main.previousPage.get(p).add(page);
-
-                    AnvilGUI.Builder builder = new AnvilGUI.Builder();
-                    builder.plugin(Main.getPlugin());
-
-                    ItemStack paper = new ItemStack(Material.PAPER);
-                    ItemMeta paperMeta = paper.getItemMeta();
-                    paperMeta.setDisplayName("§akeyword");
-                    paper.setItemMeta(paperMeta);
-
-                    builder.onComplete((player2, text) -> {
-                        ArrayList<String> keywords = Main.search.get(p);
-                        if (!keywords.contains(text)) {
-                            keywords.add(text);
-                            Main.search.put(p, keywords);
-                            Main.previousPage.get(p).remove(Main.previousPage.get(p).size() - 1);
-                            return AnvilGUI.Response.close();
-                        }
-                        return null;
-                    });
-
-                    builder.onClose(player2 -> openHomeList(p, target));
-                    builder.onLeftInputClick(player2 -> openPreviousPage(p));
-
-                    builder.itemLeft(paper);
-                    builder.text("keyword");
-
-                    builder.title("Enter keyword");
-
-                    builder.open(p);
-                });
-
-                // manage keywords
-                search.onRightClick(player -> {
-                    Main.previousPage.get(p).add(page);
-                    Inventories.openSearchKeys(p);
-                });
-
-                // clear
-                search.onMiddleClick(player -> {
-                    Main.search.put(p, new ArrayList<>());
-                    reloadInventory(p);
-                });
-
-                // lore-keywords
-                if (Main.search.get(p).size() == 1) searchLore.add("§7Keyword: " + Main.search.get(p).get(0));
-                else {
-
-                    StringBuilder keywords = new StringBuilder("§7Keywords: ");
-                    for (int i = 0; i < Main.search.get(p).size(); i++) {
-                        if (i <= 2) {
-                            if (i != 0) keywords.append(", ");
-                            keywords.append(Main.search.get(p).get(i));
-                        } else break;
-                    }
-
-                    if (Main.search.get(p).size() > 3)
-                        keywords.append(" (+").append(Main.search.get(p).size() - 3).append(")");
-
-                    searchLore.add(keywords.toString());
-                }
-
-                // lore-keybinds
-                searchLore.add("§7Left-click to add a keyword");
-                searchLore.add("§7Right-click to remove the search");
-
-            } else {
-                search.onClick(player -> {
-
-                    Main.previousPage.get(p).add(page);
-
-                    AnvilGUI.Builder builder = new AnvilGUI.Builder();
-                    builder.plugin(Main.getPlugin());
-
-                    ItemStack paper = new ItemStack(Material.PAPER);
-                    ItemMeta paperMeta = paper.getItemMeta();
-                    paperMeta.setDisplayName("§akeyword");
-                    if (!Main.search.get(p).isEmpty()) paperMeta.setDisplayName("§a" + Main.search.get(p));
-                    paper.setItemMeta(paperMeta);
-
-                    builder.onComplete((player2, text) -> {
-                        ArrayList<String> keywords = Main.search.get(p);
-                        if (!keywords.contains(text)) {
-                            keywords.add(text);
-                            Main.search.put(p, keywords);
-                            Main.previousPage.get(p).remove(Main.previousPage.get(p).size() - 1);
-                            return AnvilGUI.Response.close();
-                        }
-                        return null;
-                    });
-
-                    builder.onClose(player2 -> openHomeList(p, target));
-                    builder.onLeftInputClick(player2 -> openPreviousPage(p));
-
-                    builder.itemLeft(paper);
-                    builder.text("keyword");
-                    if (!Main.search.get(p).isEmpty()) builder.text(Main.search.get(p).get(0));
-
-                    builder.title("Enter keyword");
-
-                    builder.open(p);
-                });
-                searchLore.add("§7Click to search for a home");
-            }
-            search.setLore(searchLore);
-            search.setSlot(47);
-            page.addItem(search);
-
             // previous page
             if (currentPage > 1) {
                 UI.Item pp = new UI.Item();
@@ -264,28 +291,11 @@ public class Inventories {
                 pp.setLore(ppLore);
                 pp.setSlot(48);
                 pp.onClick(player -> {
-                    Main.page.put(p, currentPage - 1);
+                    setCurrentPage(p, page, currentPage - 1);
                     reloadInventory(p);
                 });
                 page.addItem(pp);
             }
-
-            // close / back
-            UI.Item close = new UI.Item();
-            ArrayList<String> closeLore = new ArrayList<>();
-            if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
-                close.setName("§eBack");
-                closeLore.add("§7Click to go back");
-                close.onClick(player -> openPreviousPage(p));
-            } else {
-                close.setName("§eClose");
-                closeLore.add("§7Click to close");
-                close.onClick(player -> p.closeInventory());
-            }
-            close.setMaterial(Material.BARRIER);
-            close.setLore(closeLore);
-            close.setSlot(49);
-            page.addItem(close);
 
             // next page
             if (homes.size() > currentPage * 45) {
@@ -297,35 +307,42 @@ public class Inventories {
                 np.setLore(npLore);
                 np.setSlot(50);
                 np.onClick(player -> {
-                    Main.page.put(p, currentPage + 1);
+                    setCurrentPage(p, page, currentPage + 1);
                     reloadInventory(p);
                 });
                 page.addItem(np);
             }
 
-            // groups
-            UI.Item groups = new UI.Item();
-            groups.setName("§eGroups");
-            groups.setMaterial(Material.BOOK);
-            ArrayList<String> groupsLore = new ArrayList<>();
-            groupsLore.add("§7Click to show the groups");
-            groupsLore.add("§6§lComming Soon");
-            groups.setLore(groupsLore);
-            groups.setSlot(52);
-            page.addItem(groups);
+            // pages
+            UI.Item pages = new UI.Item();
+            ArrayList<String> pagesLore = new ArrayList<>();
+            pages.setName("§ePages");
+            pages.setMaterial(Material.BOOK);
+            pagesLore.add("§7Click to show all pages");
+            pages.setLore(pagesLore);
+            pages.setSlot(51);
+            pages.onClick(player -> {
+                Main.pageHistory.get(p).add(page);
+                openPagesList(p, (int) Precision.round((float) getHomes(target).size() / 45, 0, 0));
+            });
+            page.addItem(pages);
 
             // homes
             for (int i = (currentPage - 1) * 45; i < currentPage * 45; i++) {
                 if (homes.size() > i) {
-                    Home home = new Home(homes.get(i), target);
+                    Home home = new Home(homes.get(i).replace(" §e⭐", ""), target);
 
                     UI.Item icon = new UI.Item();
                     icon.setName("§a" + home.getName());
                     icon.setMaterial(home.getIcon().getType());
                     ArrayList<String> iconLore = new ArrayList<>();
 
-                    if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
-                        try {
+                    // own homes
+                    if (p == target) {
+
+                        ArrayList<String> favoriteHomes = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes"));
+
+                        if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
                             Location loc = home.getLocation();
                             double x = Precision.round(loc.getX(), 2);
                             double y = Precision.round(loc.getY(), 2);
@@ -334,13 +351,8 @@ public class Inventories {
                             iconLore.add("§7World: " + loc.getWorld().getName());
                             iconLore.add("§7X: " + x + " Y: " + y + " Z: " + z);
                             iconLore.add("§7--------------------");
-                        } catch (Exception ignored) {
                         }
-                    }
 
-                    if (p == target) {
-
-                        ArrayList<String> favoriteHomes = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes"));
                         iconLore.add("§7Left-click to visit");
                         iconLore.add("§7Right-click to edit");
                         if (favoriteHomes.contains(home.getName())) {
@@ -352,7 +364,7 @@ public class Inventories {
                         }
 
                         icon.onRightClick(player -> {
-                            Main.previousPage.get(p).add(page);
+                            Main.pageHistory.get(p).add(page);
                             Main.currentHome.put(p, home);
                             openHomeGui(p, home);
                         });
@@ -364,13 +376,120 @@ public class Inventories {
                             Main.getPlugin().saveConfig();
                             reloadInventory(p);
                         });
+                    }
 
-                    } else if (cfg.getBoolean("Players." + target.getUniqueId() + ".Settings.Visitors.Enabled")
-                            || cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.Whitelist").contains(p.getName())
-                            || !cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.BlackList").contains(p.getName())) {
-                        iconLore.add("§7Click to visit");
-                        icon.onClick(player -> p.teleport(home.getLocation()));
-                    } else iconLore.add("§cYou can't visit the homes of this player");
+                    // visitors allowed
+                    else if (cfg.getBoolean("Players." + target.getUniqueId() + ".Settings.Visitors.Enabled")) {
+
+                        // not on blacklist
+                        if (!cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.Blacklist").contains(p.getName())) {
+
+                            // on whitelist
+                            if (cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.Whitelist").contains(p.getName())) {
+                                if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
+                                    Location loc = home.getLocation();
+                                    double x = Precision.round(loc.getX(), 2);
+                                    double y = Precision.round(loc.getY(), 2);
+                                    double z = Precision.round(loc.getZ(), 2);
+
+                                    iconLore.add("§7World: " + loc.getWorld().getName());
+                                    iconLore.add("§7X: " + x + " Y: " + y + " Z: " + z);
+                                    iconLore.add("§7--------------------");
+                                }
+                                iconLore.add("§aClick to visit");
+                                icon.onClick(player -> {
+                                    p.teleport(home.getLocation());
+                                    ChatMessage.sendMessage(p, "You successfully teleported to §6" + home.getName(), true);
+                                });
+                            }
+
+                            // not on whitelist
+                            else {
+
+                                // public
+                                if (home.getType() == Home.HomeType.PUBLIC) {
+                                    if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
+                                        Location loc = home.getLocation();
+                                        double x = Precision.round(loc.getX(), 2);
+                                        double y = Precision.round(loc.getY(), 2);
+                                        double z = Precision.round(loc.getZ(), 2);
+
+                                        iconLore.add("§7World: " + loc.getWorld().getName());
+                                        iconLore.add("§7X: " + x + " Y: " + y + " Z: " + z);
+                                        iconLore.add("§7--------------------");
+                                    }
+                                    iconLore.add("§aClick to visit");
+                                    icon.onClick(player -> {
+                                        p.teleport(home.getLocation());
+                                        ChatMessage.sendMessage(p, "You successfully teleported to §6" + home.getName(), true);
+                                    });
+                                }
+
+                                // password
+                                else if (home.getType() == Home.HomeType.PASSWORD) {
+                                    iconLore.add("§eEnter the password to visit");
+                                    icon.onClick(player -> {
+                                        Main.pageHistory.get(p).add(page);
+
+                                        AnvilGUI.Builder builder = new AnvilGUI.Builder();
+
+                                        ItemStack paper = new ItemStack(Material.PAPER);
+                                        builder.text("enter password");
+                                        builder.itemLeft(paper);
+
+                                        builder.onLeftInputClick(player2 -> openPreviousPage(p));
+                                        builder.onComplete((player2, text) -> {
+                                            if (text.equals(home.getPassword())) {
+                                                p.teleport(home.getLocation());
+                                                ChatMessage.sendMessage(p, "§aSuccessfully teleported to §6" + home.getName(), true);
+                                                Main.pageHistory.get(p).clear();
+                                                return AnvilGUI.Response.close();
+                                            } else return AnvilGUI.Response.text("password incorrect");
+                                        });
+                                        builder.onClose(player2 -> openPlayerList(p));
+
+                                        builder.plugin(Main.getPlugin());
+                                        builder.title("Password");
+                                        builder.open(p);
+                                    });
+                                }
+
+                                // private
+                                else if (home.getType() == Home.HomeType.PRIVATE) {
+                                    iconLore.add("§cYou can't visit this home");
+                                }
+                            }
+                        }
+
+                        // on blacklist
+                        else iconLore.add("§cYou can't visit the homes of this player");
+                    }
+
+                    // visitors not allowed
+                    else {
+
+                        // on whitelist
+                        if (cfg.getStringList("Players." + target.getUniqueId() + ".Settings.Visitors.Whitelist").contains(p.getName())) {
+                            if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
+                                Location loc = home.getLocation();
+                                double x = Precision.round(loc.getX(), 2);
+                                double y = Precision.round(loc.getY(), 2);
+                                double z = Precision.round(loc.getZ(), 2);
+
+                                iconLore.add("§7World: " + loc.getWorld().getName());
+                                iconLore.add("§7X: " + x + " Y: " + y + " Z: " + z);
+                                iconLore.add("§7--------------------");
+                            }
+                            iconLore.add("§aClick to visit");
+                            icon.onClick(player -> {
+                                p.teleport(home.getLocation());
+                                ChatMessage.sendMessage(p, "You successfully teleported to §6" + home.getName(), true);
+                            });
+                        }
+
+                        // not on whitelist
+                        else iconLore.add("§cYou can't visit the homes of this player");
+                    }
 
                     icon.setLore(iconLore);
                     icon.setSlot(i - (currentPage - 1) * 45);
@@ -402,199 +521,149 @@ public class Inventories {
 
     public static void openIconList(Player p) {
 
-        int currentPage = Main.page.get(p);
-
         UI.Page page = new UI.Page();
 
         page.setTitle("Choose icon");
         page.setSize(54);
 
-        ArrayList<String> icons = sortIconList(p);
-        icons = searchResults(icons, p);
+        int currentPage = getCurrentPage(p, page);
 
-        // previous page
-        if (currentPage > 1) {
-            UI.Item pp = new UI.Item();
-            ArrayList<String> ppLore = new ArrayList<>();
-            ppLore.add("§7Click to go to the previous page");
-            pp.setName("§ePrevious page");
-            pp.setMaterial(Material.ARROW);
-            pp.setLore(ppLore);
-            pp.setSlot(48);
-            pp.onClick(player -> {
-                Main.page.put(p, currentPage - 1);
-                reloadInventory(p);
-            });
-            page.addItem(pp);
-        }
-
-        // next page
-        if (icons.size() > currentPage * 45) {
-            UI.Item np = new UI.Item();
-            ArrayList<String> npLore = new ArrayList<>();
-            npLore.add("§7Click to go to the next page");
-            np.setName("§eNext page");
-            np.setMaterial(Material.ARROW);
-            np.setLore(npLore);
-            np.setSlot(50);
-            np.onClick(player -> {
-                Main.page.put(p, currentPage + 1);
-                reloadInventory(p);
-            });
-            page.addItem(np);
-        }
-
-        // close / back
-        UI.Item close = new UI.Item();
-        ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
-            close.setName("§eBack");
-            closeLore.add("§7Click to go back");
-            close.onClick(player -> openPreviousPage(p));
-        } else {
-            close.setName("§eClose");
-            closeLore.add("§7Click to close");
-            close.onClick(player -> p.closeInventory());
-        }
-        close.setMaterial(Material.BARRIER);
-        close.setLore(closeLore);
-        close.setSlot(49);
-        page.addItem(close);
+        String type = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Type");
+        String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Direction");
+        ArrayList<String> icons = getIcons();
+        icons = sort(icons, type, direction);
+        icons = searchResults(icons, p, page);
 
         // search
         UI.Item search = new UI.Item();
         search.setName("§eSearch");
-        search.setMaterial(Material.ANVIL);
+        search.setMaterial(Material.COMPASS);
         ArrayList<String> searchLore = new ArrayList<>();
 
         // click event / lore
-        if (!Main.search.get(p).isEmpty()) {
+        if (!getSearchKeys(p, page).isEmpty()) {
 
             // add keyword
             search.onLeftClick(player -> {
 
-                Main.previousPage.get(p).add(page);
+                Main.pageHistory.get(p).add(page);
 
                 AnvilGUI.Builder builder = new AnvilGUI.Builder();
                 builder.plugin(Main.getPlugin());
 
                 ItemStack paper = new ItemStack(Material.PAPER);
-                ItemMeta paperMeta = paper.getItemMeta();
-                paperMeta.setDisplayName("§akeyword");
-                paper.setItemMeta(paperMeta);
 
                 builder.onComplete((player2, text) -> {
-                    ArrayList<String> keywords = Main.search.get(p);
-                    if (!keywords.contains(text)) {
-                        keywords.add(text);
-                        Main.search.put(p, keywords);
-                        Main.previousPage.get(p).remove(Main.previousPage.get(p).size() - 1);
+                    if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                        addSearchKey(p, getPageHistory(p, 1), text);
                         return AnvilGUI.Response.close();
                     }
-                    return null;
+                    return AnvilGUI.Response.text("already existing");
                 });
 
-                builder.onClose(player2 -> openIconList(p));
+                builder.onClose(player2 -> openPreviousPage(p));
                 builder.onLeftInputClick(player2 -> openPreviousPage(p));
 
                 builder.itemLeft(paper);
                 builder.text("keyword");
 
                 builder.title("Enter keyword");
-
                 builder.open(p);
             });
 
             // manage keywords
             search.onRightClick(player -> {
-                Main.previousPage.get(p).add(page);
+                Main.pageHistory.get(p).add(page);
                 Inventories.openSearchKeys(p);
             });
 
             // clear
             search.onMiddleClick(player -> {
-                Main.search.put(p, new ArrayList<>());
+                clearSearchKeys(p, page);
                 reloadInventory(p);
             });
 
             // lore-keywords
-            if (Main.search.get(p).size() == 1) searchLore.add("§7Keyword: " + Main.search.get(p).get(0));
+            if (getSearchKeys(p, page).size() == 1) searchLore.add("§7Keyword: " + getSearchKey(p, page, 0));
             else {
 
                 StringBuilder keywords = new StringBuilder("§7Keywords: ");
-                for (int i = 0; i < Main.search.get(p).size(); i++) {
+                for (int i = 0; i < getSearchKeys(p, page).size(); i++) {
                     if (i <= 2) {
                         if (i != 0) keywords.append(", ");
-                        keywords.append(Main.search.get(p).get(i));
+                        keywords.append(getSearchKey(p, page, i));
                     } else break;
                 }
 
-                if (Main.search.get(p).size() > 3)
-                    keywords.append(" (+").append(Main.search.get(p).size() - 3).append(")");
+                if (getSearchKeys(p, page).size() > 3)
+                    keywords.append(" (+").append(getSearchKeys(p, page).size() - 3).append(")");
 
                 searchLore.add(keywords.toString());
             }
 
             // lore-keybinds
+            searchLore.add("§7--------------------");
             searchLore.add("§7Left-click to add a keyword");
-            searchLore.add("§7Right-click to remove the search");
+            searchLore.add("§7Right-click to manage the keywords");
+            searchLore.add("§7Middle-click to clear the search");
 
         } else {
             search.onClick(player -> {
 
-                Main.previousPage.get(p).add(page);
+                Main.pageHistory.get(p).add(page);
 
                 AnvilGUI.Builder builder = new AnvilGUI.Builder();
                 builder.plugin(Main.getPlugin());
 
                 ItemStack paper = new ItemStack(Material.PAPER);
-                ItemMeta paperMeta = paper.getItemMeta();
-                paperMeta.setDisplayName("§akeyword");
-                if (!Main.search.get(p).isEmpty()) paperMeta.setDisplayName("§a" + Main.search.get(p));
-                paper.setItemMeta(paperMeta);
 
                 builder.onComplete((player2, text) -> {
-                    ArrayList<String> keywords = Main.search.get(p);
-                    if (!keywords.contains(text)) {
-                        keywords.add(text);
-                        Main.search.put(p, keywords);
-                        Main.previousPage.get(p).remove(Main.previousPage.get(p).size() - 1);
+                    if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                        addSearchKey(p, getPageHistory(p, 1), text);
                         return AnvilGUI.Response.close();
                     }
-                    return null;
+                    return AnvilGUI.Response.text("already existing");
                 });
 
-                builder.onClose(player2 -> openIconList(p));
+                builder.onClose(player2 -> openPreviousPage(p));
                 builder.onLeftInputClick(player2 -> openPreviousPage(p));
 
                 builder.itemLeft(paper);
                 builder.text("keyword");
-                if (!Main.search.get(p).isEmpty()) builder.text(Main.search.get(p).get(0));
 
                 builder.title("Enter keyword");
-
                 builder.open(p);
             });
             searchLore.add("§7Click to search for a home");
         }
         search.setLore(searchLore);
-        search.setSlot(47);
+        search.setSlot(45);
         page.addItem(search);
 
-        // sorting
-        String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Type");
-        String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Direction");
+        // filter
+        UI.Item filter = new UI.Item();
+        ArrayList<String> filterLore = new ArrayList<>();
+        filter.setName("§eFilter");
+        filter.setMaterial(Material.HOPPER);
+        filterLore.add("§7Filter: no filter");
+        filterLore.add("§7--------------------");
+        filterLore.add("§7Click to edit the filter");
+        filterLore.add("§6§lComming Soon");
+        filter.setLore(filterLore);
+        filter.setSlot(46);
+        page.addItem(filter);
 
+        // sorting
         UI.Item sort = new UI.Item();
         sort.setName("§eSorting");
-        sort.setMaterial(Material.HOPPER);
+        sort.setMaterial(Material.FILLED_MAP);
         ArrayList<String> sortLore = new ArrayList<>();
-        sortLore.add("§7Current: " + sorting + " | " + direction);
+        sortLore.add("§7Current: " + type + " | " + direction);
         sortLore.add("§7--------------------");
         sortLore.add("§7Left-click to change type");
         sortLore.add("§7Right-click to change direction");
         sort.setLore(sortLore);
-        sort.setSlot(46);
+        sort.setSlot(47);
         sort.onLeftClick(player -> {
             switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Type")) {
                 case "default" -> {
@@ -624,6 +693,69 @@ public class Inventories {
             }
         });
         page.addItem(sort);
+
+        // previous page
+        if (currentPage > 1) {
+            UI.Item pp = new UI.Item();
+            ArrayList<String> ppLore = new ArrayList<>();
+            ppLore.add("§7Click to go to the previous page");
+            pp.setName("§ePrevious page");
+            pp.setMaterial(Material.ARROW);
+            pp.setLore(ppLore);
+            pp.setSlot(48);
+            pp.onClick(player -> {
+                setCurrentPage(p, page, currentPage - 1);
+                reloadInventory(p);
+            });
+            page.addItem(pp);
+        }
+
+        // close / back
+        UI.Item close = new UI.Item();
+        ArrayList<String> closeLore = new ArrayList<>();
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
+            close.setName("§eBack");
+            closeLore.add("§7Click to go back");
+            close.onClick(player -> openPreviousPage(p));
+        } else {
+            close.setName("§eClose");
+            closeLore.add("§7Click to close");
+            close.onClick(player -> p.closeInventory());
+        }
+        close.setMaterial(Material.BARRIER);
+        close.setLore(closeLore);
+        close.setSlot(49);
+        page.addItem(close);
+
+        // next page
+        if (icons.size() > currentPage * 45) {
+            UI.Item np = new UI.Item();
+            ArrayList<String> npLore = new ArrayList<>();
+            npLore.add("§7Click to go to the next page");
+            np.setName("§eNext page");
+            np.setMaterial(Material.ARROW);
+            np.setLore(npLore);
+            np.setSlot(50);
+            np.onClick(player -> {
+                setCurrentPage(p, page, currentPage + 1);
+                reloadInventory(p);
+            });
+            page.addItem(np);
+        }
+
+        // pages
+        UI.Item pages = new UI.Item();
+        ArrayList<String> pagesLore = new ArrayList<>();
+        pages.setName("§ePages");
+        pages.setMaterial(Material.BOOK);
+        pagesLore.add("§7Click to show all pages");
+        pages.setLore(pagesLore);
+        pages.setSlot(51);
+        pages.onClick(player -> {
+            Main.pageHistory.get(p).add(page);
+            openPagesList(p, (int) Precision.round((float) getIcons().size() / 45, 0, 0));
+        });
+        page.addItem(pages);
 
         // icons
         for (int i = (currentPage - 1) * 45; i < currentPage * 45; i++) {
@@ -656,13 +788,13 @@ public class Inventories {
         page.setTitle("Whitelist");
         page.setSize(54);
 
-        int currentPage = Main.page.get(p);
+        int currentPage = getCurrentPage(p, page);
         ArrayList<String> whitelist = getWhiteList(p);
 
         // close / back
         UI.Item close = new UI.Item();
         ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
             // back
             close.setName("§eBack");
             closeLore.add("§7Click to go back");
@@ -687,18 +819,20 @@ public class Inventories {
         create.setLore(createLore);
         create.setSlot(53);
         create.onClick(player -> {
-            Main.previousPage.get(p).add(page);
+            Main.pageHistory.get(p).add(page);
             openPlayerList(p);
         });
         page.addItem(create);
 
         if (!whitelist.isEmpty()) {
 
-            ArrayList<String> players = sortPlayerList(whitelist, p);
-            players = searchResults(players, p);
+            String type = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
+            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
+            whitelist = sort(whitelist, type, direction);
+            whitelist = searchResults(whitelist, p, page);
 
             // next page
-            if (players.size() > currentPage * 45) {
+            if (whitelist.size() > currentPage * 45) {
                 UI.Item np = new UI.Item();
                 np.setName("§eNext page");
                 np.setMaterial(Material.ARROW);
@@ -707,7 +841,7 @@ public class Inventories {
                 np.setLore(npLore);
                 np.setSlot(50);
                 np.onClick(player -> {
-                    Main.page.put(p, Main.page.get(p) + 1);
+                    setCurrentPage(p, page, currentPage + 1);
                     reloadInventory(p);
                 });
                 page.addItem(np);
@@ -723,21 +857,18 @@ public class Inventories {
                 pp.setLore(ppLore);
                 pp.setSlot(48);
                 pp.onClick(player -> {
-                    Main.page.put(p, Main.page.get(p) - 1);
+                    setCurrentPage(p, page, currentPage - 1);
                     reloadInventory(p);
                 });
                 page.addItem(pp);
             }
 
             // sorting
-            String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
-            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
-
             UI.Item sort = new UI.Item();
             sort.setName("§eSorting");
             sort.setMaterial(Material.HOPPER);
             ArrayList<String> sortLore = new ArrayList<>();
-            sortLore.add("§7Current: " + sorting + " | " + direction);
+            sortLore.add("§7Current: " + type + " | " + direction);
             sortLore.add("§7Left-click to change type");
             sortLore.add("§7Right-click to change direction");
             sort.setLore(sortLore);
@@ -774,10 +905,10 @@ public class Inventories {
 
             // players
             for (int i = (currentPage - 1) * 45; i < currentPage * 45; i++) {
-                if (players.size() > i) {
+                if (whitelist.size() > i) {
 
                     OfflinePlayer player;
-                    String name = players.get(i);
+                    String name = whitelist.get(i);
                     if (Bukkit.getOnlinePlayers().contains(Bukkit.getPlayer(name))) player = Bukkit.getPlayer(name);
                     else player = Bukkit.getOfflinePlayer(name);
 
@@ -820,13 +951,13 @@ public class Inventories {
         page.setTitle("Blacklist");
         page.setSize(54);
 
-        int currentPage = Main.page.get(p);
+        int currentPage = getCurrentPage(p, page);
         ArrayList<String> blacklist = getBlackList(p);
 
         // close / back
         UI.Item close = new UI.Item();
         ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
             // back
             close.setName("§eBack");
             closeLore.add("§7Click to go back");
@@ -851,18 +982,20 @@ public class Inventories {
         create.setLore(createLore);
         create.setSlot(53);
         create.onClick(player -> {
-            Main.previousPage.get(p).add(page);
+            Main.pageHistory.get(p).add(page);
             openPlayerList(p);
         });
         page.addItem(create);
 
         if (!blacklist.isEmpty()) {
 
-            ArrayList<String> players = sortPlayerList(blacklist, p);
-            players = searchResults(players, p);
+            String type = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
+            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
+            blacklist = sort(blacklist, type, direction);
+            blacklist = searchResults(blacklist, p, page);
 
             // next page
-            if (players.size() > currentPage * 45) {
+            if (blacklist.size() > currentPage * 45) {
                 UI.Item np = new UI.Item();
                 np.setName("§eNext page");
                 np.setMaterial(Material.ARROW);
@@ -871,7 +1004,7 @@ public class Inventories {
                 np.setLore(npLore);
                 np.setSlot(50);
                 np.onClick(player -> {
-                    Main.page.put(p, Main.page.get(p) + 1);
+                    setCurrentPage(p, page, currentPage + 1);
                     reloadInventory(p);
                 });
                 page.addItem(np);
@@ -887,21 +1020,18 @@ public class Inventories {
                 pp.setLore(ppLore);
                 pp.setSlot(48);
                 pp.onClick(player -> {
-                    Main.page.put(p, Main.page.get(p) - 1);
+                    setCurrentPage(p, page, currentPage - 1);
                     reloadInventory(p);
                 });
                 page.addItem(pp);
             }
 
             // sorting
-            String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
-            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
-
             UI.Item sort = new UI.Item();
             sort.setName("§eSorting");
             sort.setMaterial(Material.HOPPER);
             ArrayList<String> sortLore = new ArrayList<>();
-            sortLore.add("§7Current: " + sorting + " | " + direction);
+            sortLore.add("§7Current: " + type + " | " + direction);
             sortLore.add("§7Left-click to change type");
             sortLore.add("§7Right-click to change direction");
             sort.setLore(sortLore);
@@ -938,10 +1068,10 @@ public class Inventories {
 
             // players
             for (int i = (currentPage - 1) * 45; i < currentPage * 45; i++) {
-                if (players.size() > i) {
+                if (blacklist.size() > i) {
 
                     OfflinePlayer player;
-                    String name = players.get(i);
+                    String name = blacklist.get(i);
                     if (Bukkit.getOnlinePlayers().contains(Bukkit.getPlayer(name))) player = Bukkit.getPlayer(name);
                     else player = Bukkit.getOfflinePlayer(name);
 
@@ -984,13 +1114,18 @@ public class Inventories {
         page.setTitle("Choose player");
         page.setSize(54);
 
-        int currentPage = Main.page.get(p);
-        ArrayList<String> players = new ArrayList<>(getPlayers());
+        int currentPage = getCurrentPage(p, page);
+
+        String type = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
+        String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
+        ArrayList<String> players = getPlayers();
+        players = sort(players, type, direction);
+        players = searchResults(players, p, page);
 
         // close / back
         UI.Item close = new UI.Item();
         ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
             close.setName("§eBack");
             closeLore.add("§7Click to go back");
             close.onClick(player -> openPreviousPage(p));
@@ -1019,7 +1154,7 @@ public class Inventories {
                 np.setLore(npLore);
                 np.setSlot(50);
                 np.onClick(player -> {
-                    Main.page.put(p, Main.page.get(p) + 1);
+                    setCurrentPage(p, page, currentPage + 1);
                     reloadInventory(p);
                 });
                 page.addItem(np);
@@ -1035,21 +1170,18 @@ public class Inventories {
                 pp.setLore(ppLore);
                 pp.setSlot(48);
                 pp.onClick(player -> {
-                    Main.page.put(p, Main.page.get(p) - 1);
+                    setCurrentPage(p, page, currentPage - 1);
                     reloadInventory(p);
                 });
                 page.addItem(pp);
             }
 
             // sorting
-            String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type");
-            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction");
-
             UI.Item sort = new UI.Item();
             sort.setName("§eSorting");
             sort.setMaterial(Material.HOPPER);
             ArrayList<String> sortLore = new ArrayList<>();
-            sortLore.add("§7Current: " + sorting + " | " + direction);
+            sortLore.add("§7Current: " + type + " | " + direction);
             sortLore.add("§7Left-click to change type");
             sortLore.add("§7Right-click to change direction");
             sort.setLore(sortLore);
@@ -1128,7 +1260,7 @@ public class Inventories {
         // close / back
         UI.Item close = new UI.Item();
         ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
             close.setName("§eBack");
             closeLore.add("§7Click to go back");
             close.onClick(player -> openPreviousPage(p));
@@ -1189,7 +1321,7 @@ public class Inventories {
             yawLore.add("§7You have disabled orientation in the settings");
             yawLore.add("§7Click here to enable orientation");
             yaw.onClick(player -> {
-                Main.previousPage.get(p).add(page);
+                Main.pageHistory.get(p).add(page);
                 openSettings(p);
             });
         }
@@ -1211,7 +1343,7 @@ public class Inventories {
             pitchLore.add("§7You have disabled orientation in the settings");
             pitchLore.add("§7Click here to enable orientation");
             pitch.onClick(player -> {
-                Main.previousPage.get(p).add(page);
+                Main.pageHistory.get(p).add(page);
                 openSettings(p);
             });
         }
@@ -1288,7 +1420,7 @@ public class Inventories {
         // close / back
         UI.Item close = new UI.Item();
         ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
             close.setName("§eBack");
             closeLore.add("§7Click to go back");
             close.onClick(player -> openPreviousPage(p));
@@ -1408,7 +1540,7 @@ public class Inventories {
                 openSettings(p);
             });
             vis.onRightClick(player -> {
-                Main.previousPage.get(p).add(page);
+                Main.pageHistory.get(p).add(page);
                 openBlacklist(p);
             });
         } else {
@@ -1424,7 +1556,7 @@ public class Inventories {
                 openSettings(p);
             });
             vis.onRightClick(player -> {
-                Main.previousPage.get(p).add(page);
+                Main.pageHistory.get(p).add(page);
                 openWhitelist(p);
             });
         }
@@ -1448,23 +1580,39 @@ public class Inventories {
         UI.Page page = new UI.Page();
 
         page.setTitle(home.getName());
-        page.setSize(27);
+        page.setSize(54);
 
-        // close / back
-        UI.Item close = new UI.Item();
-        ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
-            close.setName("§eBack");
-            closeLore.add("§7Click to go back");
-            close.onClick(player -> openPreviousPage(p));
-        } else {
-            close.setName("§eClose");
-            closeLore.add("§7Click to close");
-            close.onClick(player -> p.closeInventory());
+        for (int i = 0; i < 18; i++) {
+            UI.Item line = new UI.Item();
+            line.setName(" ");
+            line.setMaterial(Material.GRAY_STAINED_GLASS_PANE);
+            line.setSlot(i);
+            page.addItem(line);
         }
-        close.setMaterial(Material.BARRIER);
-        close.setLore(closeLore);
-        close.setSlot(22);
+
+        for (int i = 36; i < 54; i++) {
+            UI.Item line = new UI.Item();
+            line.setName(" ");
+            line.setMaterial(Material.GRAY_STAINED_GLASS_PANE);
+            line.setSlot(i);
+            page.addItem(line);
+        }
+
+        // icon
+        UI.Item icon = new UI.Item();
+        ArrayList<String> iconLore = new ArrayList<>();
+        icon.setName("§eIcon");
+        icon.setMaterial(home.getIcon().getType());
+        iconLore.add("§7" + home.getIcon().getType().toString().toLowerCase().replaceAll("_", " "));
+        iconLore.add("§7--------------------");
+        iconLore.add("§7Click to change");
+        icon.setLore(iconLore);
+        icon.setSlot(0);
+        icon.onClick(player -> {
+            Main.pageHistory.get(p).add(page);
+            openIconList(p);
+        });
+        page.addItem(icon);
 
         // name
         UI.Item name = new UI.Item();
@@ -1475,7 +1623,54 @@ public class Inventories {
         nameLore.add("§7--------------------");
         nameLore.add("§7Click to change");
         name.setLore(nameLore);
-        name.setSlot(10);
+        name.setSlot(4);
+        page.addItem(name);
+
+        // favorite
+        UI.Item fav = new UI.Item();
+        ArrayList<String> favLore = new ArrayList<>();
+        ArrayList<String> favHomes = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes"));
+        if (favHomes.contains(home.getName())) {
+            fav.setName("§eFavorite");
+            fav.setMaterial(Material.NETHER_STAR);
+            favLore.add("§7Click to unfavorite this home");
+            fav.onClick(player -> {
+                favHomes.remove(home.getName());
+                cfg.set("Players." + p.getUniqueId() + ".FavoriteHomes", favHomes);
+                Main.getPlugin().saveConfig();
+                reloadInventory(p);
+            });
+        } else {
+            fav.setName("§fFavorite");
+            fav.setMaterial(Material.GUNPOWDER);
+            favLore.add("§7Click to favorite this home");
+            fav.onClick(player -> {
+                favHomes.add(home.getName());
+                cfg.set("Players." + p.getUniqueId() + ".FavoriteHomes", favHomes);
+                Main.getPlugin().saveConfig();
+                reloadInventory(p);
+            });
+        }
+        fav.setLore(favLore);
+        fav.setSlot(8);
+        page.addItem(fav);
+
+        // close / back
+        UI.Item close = new UI.Item();
+        ArrayList<String> closeLore = new ArrayList<>();
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
+            close.setName("§eBack");
+            closeLore.add("§7Click to go back");
+            close.onClick(player -> openPreviousPage(p));
+        } else {
+            close.setName("§eClose");
+            closeLore.add("§7Click to close");
+            close.onClick(player -> p.closeInventory());
+        }
+        close.setMaterial(Material.BARRIER);
+        close.setLore(closeLore);
+        close.setSlot(49);
+        page.addItem(close);
 
         // location
         UI.Item loc = new UI.Item();
@@ -1492,40 +1687,14 @@ public class Inventories {
         locLore.add("§7World: " + w);
         locLore.add("§7--------------------");
         locLore.add("§7Click to change");
-        locLore.add("§6§lComming Soon");
+        locLore.add("§6§lComing Soon");
         loc.setLore(locLore);
-        loc.setSlot(11);
+        loc.setSlot(18);
         loc.onClick(player -> {
-            Main.previousPage.get(p).add(page);
+            Main.pageHistory.get(p).add(page);
             openLocationGui(p, home);
         });
-
-        // icon
-        UI.Item icon = new UI.Item();
-        ArrayList<String> iconLore = new ArrayList<>();
-        icon.setName("§eIcon");
-        icon.setMaterial(home.getIcon().getType());
-        iconLore.add("§7" + home.getIcon().getType().toString().toLowerCase().replaceAll("_", " "));
-        iconLore.add("§7--------------------");
-        iconLore.add("§7Click to change");
-        icon.setLore(iconLore);
-        icon.setSlot(12);
-        icon.onClick(player -> {
-            Main.previousPage.get(p).add(page);
-            openIconList(p);
-        });
-
-        // groups
-        UI.Item groups = new UI.Item();
-        ArrayList<String> groupsLore = new ArrayList<>();
-        groups.setName("§eGroups");
-        groups.setMaterial(Material.BOOK);
-        groupsLore.add("§7Groups: No groups");
-        groupsLore.add("§7--------------------");
-        groupsLore.add("§7Click to manage groups");
-        groupsLore.add("§6§lComming Soon");
-        groups.setLore(groupsLore);
-        groups.setSlot(13);
+        page.addItem(loc);
 
         // type
         UI.Item type = new UI.Item();
@@ -1537,6 +1706,8 @@ public class Inventories {
                 type.setMaterial(Material.LIME_DYE);
                 typeLore.add("§7Type: §aPublic");
                 typeLore.add("§7Everyone can join");
+                typeLore.add("§7--------------------");
+                typeLore.add("§7Click to change");
                 type.onClick(player -> {
                     home.setType(Home.HomeType.PASSWORD);
                     reloadInventory(p);
@@ -1545,18 +1716,42 @@ public class Inventories {
             case PASSWORD -> {
                 type.setMaterial(Material.YELLOW_DYE);
                 typeLore.add("§7Type: §ePassword");
+                typeLore.add("§7Password: " + home.getPassword());
                 typeLore.add("§7Only players with the password can join");
-                type.onLeftClick(player ->
-                {
+                typeLore.add("§7--------------------");
+                typeLore.add("§7Left-click to change type");
+                typeLore.add("§7Right-click to change password");
+                type.onLeftClick(player -> {
                     home.setType(Home.HomeType.PRIVATE);
                     reloadInventory(p);
                 });
-                type.onRightClick(player -> p.sendMessage(Main.prefix + "Change Password - §6§lComming Soon"));
+                type.onRightClick(player -> {
+                    Main.pageHistory.get(p).add(page);
+
+                    AnvilGUI.Builder builder = new AnvilGUI.Builder();
+
+                    ItemStack paper = new ItemStack(Material.PAPER);
+                    builder.itemLeft(paper);
+
+                    builder.onLeftInputClick(player2 -> openPreviousPage(p));
+                    builder.onComplete((player2, text) -> {
+                        home.setPassword(text);
+                        return AnvilGUI.Response.close();
+                    });
+                    builder.onClose(player2 -> openPreviousPage(p));
+
+                    builder.text("new password");
+                    builder.title("Password");
+                    builder.plugin(Main.getPlugin());
+                    builder.open(p);
+                });
             }
             case PRIVATE -> {
                 type.setMaterial(Material.RED_DYE);
                 typeLore.add("§7Type: §cPrivate");
                 typeLore.add("§7Noone can join your home");
+                typeLore.add("§7--------------------");
+                typeLore.add("§7Click to change");
                 type.onClick(player -> {
                     home.setType(Home.HomeType.PUBLIC);
                     reloadInventory(p);
@@ -1564,43 +1759,69 @@ public class Inventories {
             }
         }
 
-        typeLore.add("§7--------------------");
-        typeLore.add("§7Click to change");
-        typeLore.add("§6§lComming Soon");
         type.setLore(typeLore);
-        type.setSlot(14);
+        type.setSlot(19);
+        page.addItem(type);
+
+        // groups
+        UI.Item groups = new UI.Item();
+        groups.setName("§eGroups");
+        groups.setMaterial(Material.BOOK);
+        ArrayList<String> groupsLore = new ArrayList<>();
+        groupsLore.add("§7Click to show the groups");
+        groupsLore.add("§6§lComing Soon");
+        groups.setLore(groupsLore);
+        groups.setSlot(20);
+        page.addItem(groups);
+
+        // join event
+        UI.Item join = new UI.Item();
+        join.setName("§eJoining");
+        join.setMaterial(Material.DIAMOND_BOOTS);
+        ArrayList<String> joinLore = new ArrayList<>();
+        joinLore.add("§7Action that gets executed when a player joins");
+        joinLore.add("§6§lComing Soon");
+        join.setLore(joinLore);
+        join.setSlot(21);
+        join.onClick(player -> {
+            Main.pageHistory.get(p).add(page);
+            openJoinActions(p);
+        });
+        page.addItem(join);
 
         // delete
         UI.Item delete = new UI.Item();
         ArrayList<String> deleteLore = new ArrayList<>();
-        delete.setName("§cDelete");
         delete.setMaterial(Material.RED_CONCRETE);
-        deleteLore.add("§7Click to delete");
+        if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
+            delete.setName("§cDelete");
+            deleteLore.add("§7Click to delete");
+        } else {
+            delete.setName("§4Delete");
+            deleteLore.add("§cBy clicking this your home");
+            deleteLore.add("§cwill get §ldeleted immediately");
+        }
         delete.setLore(deleteLore);
-        delete.setSlot(16);
+        delete.setSlot(35);
         delete.onClick(player -> {
+
+            // delete-protection on
             if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
-                Main.previousPage.get(p).add(page);
+
+                Main.pageHistory.get(p).add(page);
                 openConfirmation(p, player2 -> {
                     home.delete();
-                    Inventories.openHomeList(p, p);
-                });
-            } else {
-                delete.onClick(player2 -> {
-                    home.delete();
-                    Inventories.openHomeList(p, p);
+                    Main.pageHistory.get(p).remove(Main.pageHistory.get(p).size() - 1);
+                    openPreviousPage(p);
                 });
             }
-        });
-        page.addItem(delete);
 
-        // add items
-        page.addItem(close);
-        page.addItem(name);
-        page.addItem(loc);
-        page.addItem(icon);
-        page.addItem(groups);
-        page.addItem(type);
+            // delete-protection off
+            else {
+                home.delete();
+                openPreviousPage(p);
+            }
+        });
         page.addItem(delete);
 
         page.setPlugin(Main.getPlugin());
@@ -1613,17 +1834,51 @@ public class Inventories {
 
         page.setTitle("Keywords");
         page.setSize(54);
-        int currentPage = Main.page.get(p);
+        int currentPage = getCurrentPage(p, page);
 
-        // create
-        UI.Item create = new UI.Item();
-        ArrayList<String> createLore = new ArrayList<>();
-        createLore.add("§7Click to add a new keyword");
-        create.setName("§eAdd Keyword");
-        create.setMaterial(Material.LIME_CONCRETE);
-        create.setLore(createLore);
-        create.setSlot(53);
-        page.addItem(create);
+        String type = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type");
+        String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction");
+        ArrayList<String> keywords = getSearchKeys(p, getPageHistory(p, 1));
+        keywords = sort(keywords, type, direction);
+        keywords = searchResults(keywords, p, page);
+
+        // add
+        UI.Item add = new UI.Item();
+        ArrayList<String> addLore = new ArrayList<>();
+        addLore.add("§7Click to add a new keyword");
+        add.setName("§eAdd Keyword");
+        add.setMaterial(Material.LIME_CONCRETE);
+        add.setLore(addLore);
+        add.setSlot(53);
+        add.onClick(player -> {
+            if (!getSearchKeys(p, getPageHistory(p, 1)).isEmpty()) {
+
+                Main.pageHistory.get(p).add(page);
+
+                AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                builder.plugin(Main.getPlugin());
+
+                ItemStack paper = new ItemStack(Material.PAPER);
+
+                builder.onComplete((player2, text) -> {
+                    if (!getSearchKeys(p, getPageHistory(p, 2)).contains(text)) {
+                        addSearchKey(p, getPageHistory(p, 2), text);
+                        return AnvilGUI.Response.close();
+                    }
+                    return AnvilGUI.Response.text("already existing");
+                });
+
+                builder.onClose(player2 -> openPreviousPage(p));
+                builder.onLeftInputClick(player2 -> openPreviousPage(p));
+
+                builder.itemLeft(paper);
+                builder.text("keyword");
+
+                builder.title("Enter keyword");
+                builder.open(p);
+            }
+        });
+        page.addItem(add);
 
         // previous page
         if (currentPage > 1) {
@@ -1635,7 +1890,7 @@ public class Inventories {
             pp.setLore(ppLore);
             pp.setSlot(48);
             pp.onClick(player -> {
-                Main.page.put(p, currentPage - 1);
+                setCurrentPage(p, page, currentPage - 1);
                 reloadInventory(p);
             });
             page.addItem(pp);
@@ -1651,7 +1906,7 @@ public class Inventories {
             np.setLore(npLore);
             np.setSlot(50);
             np.onClick(player -> {
-                Main.page.put(p, currentPage + 1);
+                setCurrentPage(p, page, currentPage + 1);
                 reloadInventory(p);
             });
             page.addItem(np);
@@ -1660,7 +1915,7 @@ public class Inventories {
         // close / back
         UI.Item close = new UI.Item();
         ArrayList<String> closeLore = new ArrayList<>();
-        if (Main.previousPage.get(p) != null) {
+        if (Main.pageHistory.get(p) != null) {
             close.setName("§eBack");
             closeLore.add("§7Click to go back");
             close.onClick(player -> openPreviousPage(p));
@@ -1674,22 +1929,166 @@ public class Inventories {
         close.setSlot(49);
         page.addItem(close);
 
+        // search
+        UI.Item search = new UI.Item();
+        search.setName("§eSearch");
+        search.setMaterial(Material.COMPASS);
+        ArrayList<String> searchLore = new ArrayList<>();
+
+        // click event / lore
+        if (!getSearchKeys(p, page).isEmpty()) {
+
+            // add keyword
+            search.onLeftClick(player -> {
+
+                Main.pageHistory.get(p).add(page);
+
+                AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                builder.plugin(Main.getPlugin());
+
+                ItemStack paper = new ItemStack(Material.PAPER);
+
+                builder.onComplete((player2, text) -> {
+                    if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                        addSearchKey(p, getPageHistory(p, 1), text);
+                        return AnvilGUI.Response.close();
+                    }
+                    return AnvilGUI.Response.text("already existing");
+                });
+
+                builder.onClose(player2 -> openPreviousPage(p));
+                builder.onLeftInputClick(player2 -> openPreviousPage(p));
+
+                builder.itemLeft(paper);
+                builder.text("keyword");
+
+                builder.title("Enter keyword");
+                builder.open(p);
+            });
+
+            // manage keywords
+            search.onRightClick(player -> {
+                Main.pageHistory.get(p).add(page);
+                Inventories.openSearchKeys(p);
+            });
+
+            // clear
+            search.onMiddleClick(player -> {
+                clearSearchKeys(p, page);
+                reloadInventory(p);
+            });
+
+            // lore-keywords
+            if (getSearchKeys(p, page).size() == 1) searchLore.add("§7Keyword: " + getSearchKey(p, page, 0));
+            else {
+
+                StringBuilder kw = new StringBuilder("§7Keywords: ");
+                for (int i = 0; i < getSearchKeys(p, page).size(); i++) {
+                    if (i <= 2) {
+                        if (i != 0) kw.append(", ");
+                        kw.append(getSearchKey(p, page, i));
+                    } else break;
+                }
+
+                if (getSearchKeys(p, page).size() > 3)
+                    kw.append(" (+").append(getSearchKeys(p, page).size() - 3).append(")");
+
+                searchLore.add(kw.toString());
+            }
+
+            // lore-keybinds
+            searchLore.add("§7--------------------");
+            searchLore.add("§7Left-click to add a keyword");
+            searchLore.add("§7Right-click to manage the keywords");
+            searchLore.add("§7Middle-click to clear the search");
+
+        } else {
+            search.onClick(player -> {
+
+                Main.pageHistory.get(p).add(page);
+
+                AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                builder.plugin(Main.getPlugin());
+
+                ItemStack paper = new ItemStack(Material.PAPER);
+
+                builder.onComplete((player2, text) -> {
+                    if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                        addSearchKey(p, getPageHistory(p, 1), text);
+                        return AnvilGUI.Response.close();
+                    }
+                    return AnvilGUI.Response.text("already existing");
+                });
+
+                builder.onClose(player2 -> openPreviousPage(p));
+                builder.onLeftInputClick(player2 -> openPreviousPage(p));
+
+                builder.itemLeft(paper);
+                builder.text("keyword");
+
+                builder.title("Enter keyword");
+                builder.open(p);
+            });
+            searchLore.add("§7Click to search for a home");
+        }
+        search.setLore(searchLore);
+        search.setSlot(45);
+        page.addItem(search);
+
+        // filter
+        UI.Item filter = new UI.Item();
+        ArrayList<String> filterLore = new ArrayList<>();
+        filter.setName("§eFilter");
+        filter.setMaterial(Material.HOPPER);
+        filterLore.add("§7Filter: no filter");
+        filterLore.add("§7--------------------");
+        filterLore.add("§7Click to edit the filter");
+        filterLore.add("§6§lComming Soon");
+        filter.setLore(filterLore);
+        filter.setSlot(46);
+        page.addItem(filter);
+
         // sorting
-        String sorting = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type");
-        String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction");
         UI.Item sort = new UI.Item();
         sort.setName("§eSorting");
+        sort.setMaterial(Material.FILLED_MAP);
         ArrayList<String> sortLore = new ArrayList<>();
-        sortLore.add("§7Current: " + sorting + " | " + direction);
+        sortLore.add("§7Current: " + type + " | " + direction);
         sortLore.add("§7--------------------");
         sortLore.add("§7Left-click to change type");
         sortLore.add("§7Right-click to change direction");
-        sort.setMaterial(Material.HOPPER);
         sort.setLore(sortLore);
-        sort.setSlot(46);
+        sort.setSlot(47);
+        sort.onLeftClick(player -> {
+            switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type")) {
+                case "date" -> {
+                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type", "name");
+                    Main.getPlugin().saveConfig();
+                    Inventories.reloadInventory(p);
+                }
+                case "name" -> {
+                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type", "date");
+                    Main.getPlugin().saveConfig();
+                    Inventories.reloadInventory(p);
+                }
+            }
+        });
+        sort.onRightClick(player -> {
+            switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction")) {
+                case "rising" -> {
+                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction", "falling");
+                    Main.getPlugin().saveConfig();
+                    Inventories.reloadInventory(p);
+                }
+                case "falling" -> {
+                    cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction", "rising");
+                    Main.getPlugin().saveConfig();
+                    Inventories.reloadInventory(p);
+                }
+            }
+        });
         page.addItem(sort);
 
-        ArrayList<String> keywords = sortKeywords(p);
         for (int i = (currentPage - 1) * 45; i < currentPage * 45; i++) {
             if (keywords.size() > i) {
 
@@ -1701,6 +2100,19 @@ public class Inventories {
                 keyword.setMaterial(Material.PAPER);
                 keyword.setLore(keywordLore);
                 keyword.setSlot(i - (currentPage - 1) * 45);
+                String kw = keywords.get(i);
+                keyword.onRightClick(player -> {
+                    if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
+                        Main.pageHistory.get(p).add(page);
+                        openConfirmation(p, player2 -> {
+                            removeSearchKey(p, Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 2), kw);
+                            openPreviousPage(p);
+                        });
+                    } else {
+                        removeSearchKey(p, getPageHistory(p, 1), kw);
+                        reloadInventory(p);
+                    }
+                });
 
                 if (i < currentPage * 45) page.addItem(keyword);
             } else break;
@@ -1709,6 +2121,451 @@ public class Inventories {
         page.setPlugin(Main.getPlugin());
         page.open(p);
     }
+
+    public static void openPagesList(Player p, int amount) {
+
+        UI.Page page = new UI.Page();
+
+        page.setTitle("Pages");
+        page.setSize(54);
+
+        int currentPage = getCurrentPage(p, page);
+
+        // close / back
+        UI.Item close = new UI.Item();
+        ArrayList<String> closeLore = new ArrayList<>();
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
+            // back
+            close.setName("§eBack");
+            closeLore.add("§7Click to go back");
+            close.onClick(player -> openPreviousPage(p));
+        } else {
+            // close
+            close.setName("§eClose");
+            closeLore.add("§7Click to close");
+            close.onClick(player -> p.closeInventory());
+        }
+        close.setMaterial(Material.BARRIER);
+        close.setLore(closeLore);
+        close.setSlot(49);
+        page.addItem(close);
+
+        // next page
+        if (amount > currentPage * 45) {
+            UI.Item np = new UI.Item();
+            np.setName("§eNext page");
+            np.setMaterial(Material.ARROW);
+            ArrayList<String> npLore = new ArrayList<>();
+            npLore.add("§7Click to go to the next page");
+            np.setLore(npLore);
+            np.setSlot(50);
+            np.onClick(player -> {
+                setCurrentPage(p, page, currentPage + 1);
+                setCurrentPage(p, page, currentPage + 1);
+                reloadInventory(p);
+            });
+            page.addItem(np);
+        }
+
+        // previous page
+        if (currentPage > 1) {
+            UI.Item pp = new UI.Item();
+            pp.setName("§ePrevious page");
+            pp.setMaterial(Material.ARROW);
+            ArrayList<String> ppLore = new ArrayList<>();
+            ppLore.add("§7Click to go to the previous page");
+            pp.setLore(ppLore);
+            pp.setSlot(48);
+            pp.onClick(player -> {
+                setCurrentPage(p, page, currentPage - 1);
+                reloadInventory(p);
+            });
+            page.addItem(pp);
+        }
+
+        for (int i = 0; i < amount; i++) {
+            UI.Item item = new UI.Item();
+            ArrayList<String> itemLore = new ArrayList<>();
+            item.setName("§aPage " + (i + 1));
+            item.setMaterial(Material.PAPER);
+            itemLore.add("§7Click to go to this page");
+            item.setLore(itemLore);
+            item.setSlot(i);
+            int newPage = i + 1;
+            item.onClick(player -> {
+                setCurrentPage(p, getPageHistory(p, 1), newPage);
+                openPreviousPage(p);
+            });
+            if (i < currentPage * 45) page.addItem(item);
+        }
+
+        page.setPlugin(Main.getPlugin());
+        page.open(p);
+    }
+
+    public static void openJoinActions(Player p) {
+
+        UI.Page page = new UI.Page();
+
+        page.setTitle("Joining");
+        page.setSize(54);
+
+        int currentPage = getCurrentPage(p, page);
+
+        // close / back
+        UI.Item close = new UI.Item();
+        ArrayList<String> closeLore = new ArrayList<>();
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
+            close.setName("§eBack");
+            closeLore.add("§7Click to go back");
+            close.onClick(player -> openPreviousPage(p));
+        } else {
+            close.setName("§eClose");
+            closeLore.add("§7Click to close");
+            close.onClick(player -> p.closeInventory());
+        }
+        close.setMaterial(Material.BARRIER);
+        close.setLore(closeLore);
+        close.setSlot(49);
+        page.addItem(close);
+
+        // settings
+        UI.Item settings = new UI.Item();
+        settings.setName("§eSettings");
+        settings.setMaterial(Material.WRITABLE_BOOK);
+        ArrayList<String> settingsLore = new ArrayList<>();
+        settingsLore.add("§7Click to open the settings");
+        settings.setLore(settingsLore);
+        settings.setSlot(52);
+        settings.onClick(player -> {
+            Main.pageHistory.get(p).add(page);
+            openSettings(p);
+        });
+        page.addItem(settings);
+
+        // create
+        UI.Item create = new UI.Item();
+        create.setName("§eCreate action");
+        create.setMaterial(Material.LIME_CONCRETE);
+        ArrayList<String> createLore = new ArrayList<>();
+        createLore.add("§7Click to create a new action");
+        create.setLore(createLore);
+        create.setSlot(53);
+        create.onClick(player -> {
+
+            Main.pageHistory.get(p).add(page);
+            Home home = Main.currentHome.get(p);
+
+            AnvilGUI.Builder builder = new AnvilGUI.Builder();
+            builder.plugin(Main.getPlugin());
+
+            ItemStack icon = findIcon(p);
+            builder.text("new action");
+
+            builder.onLeftInputClick(player2 -> openPreviousPage(p));
+            builder.onComplete((player2, text) -> {
+                if (!home.getJoinActions().contains(text)) {
+                    Home.JoinAction action = new Home.JoinAction(text);
+                    home.addJoinAction(action);
+                    Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
+                        Main.pageHistory.get(p).add(page);
+                        openPreviousPage(p);
+                    }, 2);
+                    return AnvilGUI.Response.close();
+                } else return AnvilGUI.Response.text("already existing");
+            });
+            builder.onClose(player2 -> openPreviousPage(p));
+
+            builder.title("Enter name");
+
+            builder.itemLeft(icon);
+            builder.text(icon.getItemMeta().getDisplayName());
+
+            builder.open(p);
+        });
+        page.addItem(create);
+
+        Home home = Main.currentHome.get(p);
+
+        if (home.getJoinActions() != null && home.getJoinActions().size() > 0) {
+
+            String type = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Type");
+            String direction = cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Direction");
+            ArrayList<String> actions = home.getJoinActions();
+            actions = searchResults(actions, p, page);
+            actions = sort(actions, type, direction);
+
+            // search
+            UI.Item search = new UI.Item();
+            search.setName("§eSearch");
+            search.setMaterial(Material.COMPASS);
+            ArrayList<String> searchLore = new ArrayList<>();
+
+            // click event / lore
+            if (!getSearchKeys(p, page).isEmpty()) {
+
+                // add keyword
+                search.onLeftClick(player -> {
+
+                    Main.pageHistory.get(p).add(page);
+
+                    AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                    builder.plugin(Main.getPlugin());
+
+                    ItemStack paper = new ItemStack(Material.PAPER);
+
+                    builder.onComplete((player2, text) -> {
+                        if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                            addSearchKey(p, getPageHistory(p, 1), text);
+                            return AnvilGUI.Response.close();
+                        }
+                        return AnvilGUI.Response.text("already existing");
+                    });
+
+                    builder.onClose(player2 -> openPreviousPage(p));
+                    builder.onLeftInputClick(player2 -> openPreviousPage(p));
+
+                    builder.itemLeft(paper);
+                    builder.text("keyword");
+
+                    builder.title("Enter keyword");
+                    builder.open(p);
+                });
+
+                // manage keywords
+                search.onRightClick(player -> {
+                    Main.pageHistory.get(p).add(page);
+                    Inventories.openSearchKeys(p);
+                });
+
+                // clear
+                search.onMiddleClick(player -> {
+                    clearSearchKeys(p, page);
+                    reloadInventory(p);
+                });
+
+                // lore-keywords
+                if (getSearchKeys(p, page).size() == 1) searchLore.add("§7Keyword: " + getSearchKey(p, page, 0));
+                else {
+
+                    StringBuilder keywords = new StringBuilder("§7Keywords: ");
+                    for (int i = 0; i < getSearchKeys(p, page).size(); i++) {
+                        if (i <= 2) {
+                            if (i != 0) keywords.append(", ");
+                            keywords.append(getSearchKey(p, page, i));
+                        } else break;
+                    }
+
+                    if (getSearchKeys(p, page).size() > 3)
+                        keywords.append(" (+").append(getSearchKeys(p, page).size() - 3).append(")");
+
+                    searchLore.add(keywords.toString());
+                }
+
+                // lore-keybinds
+                searchLore.add("§7--------------------");
+                searchLore.add("§7Left-click to add a keyword");
+                searchLore.add("§7Right-click to manage the keywords");
+                searchLore.add("§7Middle-click to clear the search");
+
+            } else {
+                search.onClick(player -> {
+
+                    Main.pageHistory.get(p).add(page);
+
+                    AnvilGUI.Builder builder = new AnvilGUI.Builder();
+                    builder.plugin(Main.getPlugin());
+
+                    ItemStack paper = new ItemStack(Material.PAPER);
+
+                    builder.onComplete((player2, text) -> {
+                        if (!getSearchKeys(p, getPageHistory(p, 1)).contains(text)) {
+                            addSearchKey(p, getPageHistory(p, 1), text);
+                            return AnvilGUI.Response.close();
+                        }
+                        return AnvilGUI.Response.text("already existing");
+                    });
+
+                    builder.onClose(player2 -> openPreviousPage(p));
+                    builder.onLeftInputClick(player2 -> openPreviousPage(p));
+
+                    builder.itemLeft(paper);
+                    builder.text("keyword");
+
+                    builder.title("Enter keyword");
+                    builder.open(p);
+                });
+                searchLore.add("§7Click to search for a home");
+            }
+            search.setLore(searchLore);
+            search.setSlot(45);
+            page.addItem(search);
+
+            // filter
+            UI.Item filter = new UI.Item();
+            ArrayList<String> filterLore = new ArrayList<>();
+            filter.setName("§eFilter");
+            filter.setMaterial(Material.HOPPER);
+            filterLore.add("§7Filter: no filter");
+            filterLore.add("§7--------------------");
+            filterLore.add("§7Click to edit the filter");
+            filterLore.add("§6§lComming Soon");
+            filter.setLore(filterLore);
+            filter.setSlot(46);
+            page.addItem(filter);
+
+            // sorting
+            UI.Item sort = new UI.Item();
+            sort.setName("§eSorting");
+            sort.setMaterial(Material.FILLED_MAP);
+            ArrayList<String> sortLore = new ArrayList<>();
+            sortLore.add("§7Current: " + type + " | " + direction);
+            sortLore.add("§7--------------------");
+            sortLore.add("§7Left-click to change type");
+            sortLore.add("§7Right-click to change direction");
+            sort.setLore(sortLore);
+            sort.setSlot(47);
+            sort.onLeftClick(player -> {
+                switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Type")) {
+                    case "date" -> {
+                        cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Type", "name");
+                        Main.getPlugin().saveConfig();
+                        Inventories.reloadInventory(p);
+                    }
+                    case "name" -> {
+                        cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Type", "favorite");
+                        Main.getPlugin().saveConfig();
+                        Inventories.reloadInventory(p);
+                    }
+                    case "favorite" -> {
+                        cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Type", "date");
+                        Main.getPlugin().saveConfig();
+                        Inventories.reloadInventory(p);
+                    }
+                }
+            });
+            sort.onRightClick(player -> {
+                switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Direction")) {
+                    case "rising" -> {
+                        cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Direction", "falling");
+                        Main.getPlugin().saveConfig();
+                        Inventories.reloadInventory(p);
+                    }
+                    case "falling" -> {
+                        cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Direction", "rising");
+                        Main.getPlugin().saveConfig();
+                        Inventories.reloadInventory(p);
+                    }
+                }
+            });
+            page.addItem(sort);
+
+            // previous page
+            if (currentPage > 1) {
+                UI.Item pp = new UI.Item();
+                ArrayList<String> ppLore = new ArrayList<>();
+                ppLore.add("§7Click to go to the previous page");
+                pp.setName("§ePrevious page");
+                pp.setMaterial(Material.ARROW);
+                pp.setLore(ppLore);
+                pp.setSlot(48);
+                pp.onClick(player -> {
+                    setCurrentPage(p, page, currentPage - 1);
+                    reloadInventory(p);
+                });
+                page.addItem(pp);
+            }
+
+            // next page
+            if (actions.size() > currentPage * 45) {
+                UI.Item np = new UI.Item();
+                ArrayList<String> npLore = new ArrayList<>();
+                npLore.add("§7Click to go to the next page");
+                np.setName("§eNext page");
+                np.setMaterial(Material.ARROW);
+                np.setLore(npLore);
+                np.setSlot(50);
+                np.onClick(player -> {
+                    setCurrentPage(p, page, currentPage + 1);
+                    reloadInventory(p);
+                });
+                page.addItem(np);
+            }
+
+            // pages
+            UI.Item pages = new UI.Item();
+            ArrayList<String> pagesLore = new ArrayList<>();
+            pages.setName("§ePages");
+            pages.setMaterial(Material.BOOK);
+            pagesLore.add("§7Click to show all pages");
+            pages.setLore(pagesLore);
+            pages.setSlot(51);
+            pages.onClick(player -> {
+                Main.pageHistory.get(p).add(page);
+                openPagesList(p, (int) Precision.round((float) home.getJoinActions().size() / 45, 0, 0));
+            });
+            page.addItem(pages);
+
+            // actions
+            for (int i = (currentPage - 1) * 45; i < currentPage * 45; i++) {
+                if (actions.size() > i) {
+                    Home.JoinAction action = new Home.JoinAction(actions.get(i));
+
+                    action.setIcon(new ItemStack(Material.GRASS_BLOCK));
+                    UI.Item icon = new UI.Item();
+                    icon.setName("§a" + action.getName());
+                    icon.setMaterial(action.getIcon().getType());
+                    ArrayList<String> iconLore = new ArrayList<>();
+                    iconLore.add("§7Left-click to choose");
+                    iconLore.add("§7Right-click to delete");
+                    iconLore.add("§7Middle-click to save as template");
+                    icon.onLeftClick(player -> openConfirmation(p, player2 -> {
+                        ArrayList<String> joinActions = home.getJoinActions();
+                        joinActions.remove(action);
+                        cfg.set("Players." + p.getUniqueId() + ".JoinActions", joinActions);
+                        Main.getPlugin().saveConfig();
+                        reloadInventory(p);
+                    }));
+                    icon.onRightClick(player -> {
+                        if (cfg.getBoolean("Players." + p.getUniqueId() + ".Settings.DeleteProtection")) {
+                            Main.pageHistory.get(p).add(page);
+                            openConfirmation(p, player2 -> {
+                                home.removeJoinAction(action);
+                                openPreviousPage(p);
+                            });
+                        } else {
+                            home.removeJoinAction(action);
+                            reloadInventory(p);
+                        }
+                    });
+
+                    icon.setLore(iconLore);
+                    icon.setSlot(i - (currentPage - 1) * 45);
+
+                    if (i < currentPage * 45)
+                        page.addItem(icon);
+                } else break;
+            }
+        }
+
+        // no actions
+        else {
+
+            UI.Item noactions = new UI.Item();
+            noactions.setName("§cNo join actions");
+            noactions.setMaterial(Material.RED_STAINED_GLASS_PANE);
+            ArrayList<String> noactionsLore = new ArrayList<>();
+            noactionsLore.add("§7You can create an action by");
+            noactionsLore.add("§7pressing the \"Create action\" button");
+            noactions.setLore(noactionsLore);
+            noactions.setSlot(22);
+            page.addItem(noactions);
+        }
+
+        page.setPlugin(Main.getPlugin());
+        page.open(p);
+    }
+
 
     private static ArrayList<String> getHomes(Player owner) {
 
@@ -1720,7 +2577,7 @@ public class Inventories {
             }
             return homes;
         } else
-            return null;
+            return new ArrayList<>();
     }
 
     private static ArrayList<String> getPlayers() {
@@ -1865,6 +2722,16 @@ public class Inventories {
         return iconsName;
     }
 
+    public static void setCurrentPage(Player p, UI.Page page, Integer number) {
+        Main.page.get(p).put(page.getTitle(), number);
+    }
+
+    public static Integer getCurrentPage(Player p, UI.Page page) {
+        int currentPage = 1;
+        if (Main.page.get(p).containsKey(page.getTitle())) currentPage = Main.page.get(p).get(page.getTitle());
+        return currentPage;
+    }
+
     public static void reloadInventory(Player p) {
 
         Player target = (Player) p.getInventory().getHolder();
@@ -1881,6 +2748,7 @@ public class Inventories {
                 case "Choose icon" -> openIconList(p);
                 case "Choose player" -> openPlayerList(p);
                 case "Keywords" -> openSearchKeys(p);
+                case "Joining" -> openJoinActions(p);
             }
         }
     }
@@ -1888,25 +2756,65 @@ public class Inventories {
     public static void openPreviousPage(Player p) {
 
         Home home = Main.currentHome.get(p);
-        if (Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1) != null) {
+        if (Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1) != null) {
 
-            Player target = Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1).getHolder();
-            String title = Main.previousPage.get(p).get(Main.previousPage.get(p).size() - 1).getTitle();
+            Player target = Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1).getHolder();
+            String title = Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - 1).getTitle();
+
+            Main.pageHistory.get(p).remove(Main.pageHistory.get(p).size() - 1);
+
             if (title.equals("Choose icon")) openIconList(p);
             else if (title.equals("Whitelist")) openWhitelist(p);
             else if (title.equals("Blacklist")) openBlacklist(p);
             else if (title.equals("Change location")) openLocationGui(p, home);
             else if (title.equals("Settings")) openSettings(p);
             else if (title.equals("Keywords")) openSearchKeys(p);
+            else if (title.equals("Joining")) openJoinActions(p);
             else if (Bukkit.getOnlinePlayers().contains(target)) {
                 if (title.equals("Homes of " + target.getName())) openHomeList(p, target);
             } else if (home != null)
                 if (title.equals(home.getName())) openHomeGui(p, home);
 
         } else p.closeInventory();
-
-        Main.previousPage.get(p).remove(Main.previousPage.get(p).size() - 1);
     }
+
+    public static UI.Page getPageHistory(Player p, Integer index) {
+        return Main.pageHistory.get(p).get(Main.pageHistory.get(p).size() - index);
+    }
+
+
+    // SEARCH
+    public static void setSearchKeys(Player p, UI.Page page, ArrayList<String> keywords) {
+        Main.search.get(p).put(page.getTitle(), keywords);
+    }
+
+    public static void addSearchKey(Player p, UI.Page page, String keyword) {
+        ArrayList<String> keywords = getSearchKeys(p, page);
+        keywords.add(keyword);
+        setSearchKeys(p, page, keywords);
+    }
+
+    public static void removeSearchKey(Player p, UI.Page page, String keyword) {
+        ArrayList<String> keywords = getSearchKeys(p, page);
+        keywords.remove(keyword);
+        setSearchKeys(p, page, keywords);
+    }
+
+    public static void clearSearchKeys(Player p, UI.Page page) {
+        setSearchKeys(p, page, new ArrayList<>());
+    }
+
+    public static ArrayList<String> getSearchKeys(Player p, UI.Page page) {
+        ArrayList<String> searchKeys = new ArrayList<>();
+        if (Main.search.get(p).get(page.getTitle()) != null)
+            searchKeys.addAll(Main.search.get(p).get(page.getTitle()));
+        return searchKeys;
+    }
+
+    public static String getSearchKey(Player p, UI.Page page, Integer index) {
+        return getSearchKeys(p, page).get(index);
+    }
+
 
     public static ItemStack findIcon(Player p) {
         ItemStack icon = new ItemStack(Material.GRASS_BLOCK);
@@ -1928,11 +2836,11 @@ public class Inventories {
         return icon;
     }
 
-    private static ArrayList<String> searchResults(ArrayList<String> list, Player p) {
+    private static ArrayList<String> searchResults(ArrayList<String> list, Player p, UI.Page page) {
         ArrayList<String> searchResults = new ArrayList<>();
-        if (!Main.search.get(p).isEmpty()) {
+        if (!getSearchKeys(p, page).isEmpty()) {
             for (String name : list) {
-                for (String keyword : Main.search.get(p)) {
+                for (String keyword : getSearchKeys(p, page)) {
                     if (name.toLowerCase().contains(keyword.toLowerCase())) {
                         if (!searchResults.contains(name)) searchResults.add(name);
                     }
@@ -1942,68 +2850,35 @@ public class Inventories {
         return searchResults;
     }
 
-    private static ArrayList<String> sortHomeList(Player p) {
-        ArrayList<String> list = getHomes(p);
-        switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Type")) {
+    private static ArrayList<String> sort(ArrayList<String> list, String type, String direction) {
+
+        switch (type) {
             case "name" -> Collections.sort(list);
             case "favorite" -> {
-                ArrayList<String> newList = new ArrayList<>(cfg.getStringList("Players." + p.getUniqueId() + ".FavoriteHomes"));
-                list.removeAll(newList);
+                ArrayList<String> favorites = new ArrayList<>();
+                for (String item : list) {
+                    if (item.contains("§e⭐")) favorites.add(item);
+                }
+                list.removeAll(favorites);
                 Collections.sort(list);
-                Collections.sort(newList);
-                newList.addAll(list);
-                list = newList;
+                Collections.sort(favorites);
+                favorites.addAll(list);
+                list = favorites;
             }
-        }
-
-        if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.HomeList.Direction").equals("falling"))
-            Collections.reverse(list);
-
-        return list;
-    }
-
-    private static ArrayList<String> sortIconList(Player p) {
-        ArrayList<String> list = getIcons();
-
-        if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Type").equals("name"))
-            Collections.sort(list);
-        if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.IconList.Direction").equals("falling"))
-            Collections.reverse(list);
-
-        return list;
-    }
-
-    private static ArrayList<String> sortPlayerList(ArrayList<String> unsortedList, Player p) {
-        switch (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Type")) {
             case "state" -> {
                 ArrayList<String> sortedList = new ArrayList<>();
-                for (String player : unsortedList) {
+                for (String player : list) {
                     if (Bukkit.getOnlinePlayers().contains(player)) {
                         sortedList.add(player);
                     }
                 }
-                unsortedList.removeAll(sortedList);
-                sortedList.addAll(unsortedList);
-                unsortedList = sortedList;
-                if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction").equals("falling"))
-                    Collections.reverse(unsortedList);
-            }
-            case "name" -> {
-                Collections.sort(unsortedList);
-                if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.PlayerList.Direction").equals("falling"))
-                    Collections.reverse(unsortedList);
+                list.removeAll(sortedList);
+                sortedList.addAll(list);
+                list = sortedList;
             }
         }
-        return unsortedList;
-    }
 
-    private static ArrayList<String> sortKeywords(Player p) {
-        ArrayList<String> list = Main.search.get(p);
-
-        if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Type").equals("name"))
-            Collections.sort(list);
-        if (cfg.getString("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction").equals("falling"))
-            Collections.reverse(list);
+        if (direction.equals("falling")) Collections.reverse(list);
 
         return list;
     }

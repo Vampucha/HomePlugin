@@ -27,70 +27,6 @@ public class Home {
         owner = homeOwner;
     }
 
-    public boolean isExisting() {
-
-        boolean isExisting = false;
-        if (cfg.contains("Players." + owner.getUniqueId() + ".Homes")) {
-            ArrayList<String> names = new ArrayList<>();
-
-            for (String id : cfg.getConfigurationSection("Players." + owner.getUniqueId() + ".Homes").getKeys(false)) {
-                names.add(cfg.getString("Players." + owner.getUniqueId() + ".Homes." + id + ".Name"));
-            }
-
-            if (names.contains(name))
-                isExisting = true;
-        }
-        return isExisting;
-    }
-
-    public void visit(Player visitor) {
-
-        visitor.teleport(getLocation());
-    }
-
-    public void setName(String name) {
-        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Name", name);
-        ArrayList<String> favorites = new ArrayList<>(cfg.getStringList("Players." + owner.getUniqueId() + ".FavoriteHomes"));
-        if (favorites.contains(this.name)) {
-            favorites.remove(this.name);
-            favorites.add(name);
-            cfg.set("Players." + owner.getUniqueId() + ".FavoriteHomes", favorites);
-        }
-        Main.getPlugin().saveConfig();
-    }
-
-    public void setType(HomeType type) {
-        String homeType = type.toString().toLowerCase();
-        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Type", homeType);
-        Main.getPlugin().saveConfig();
-    }
-
-    public void setIcon(ItemStack icon) {
-        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Icon", icon);
-        Main.getPlugin().saveConfig();
-    }
-
-    public void setLocation(Location loc) {
-        cfg.set("Players." + owner.getLocation() + ".Homes." + getID() + ".Location", loc);
-        Main.getPlugin().saveConfig();
-    }
-
-    private String findID() {
-
-        String id = "";
-        ArrayList<String> homes = new ArrayList<>();
-        if (cfg.contains("Players." + owner.getUniqueId() + ".Homes"))
-            homes.addAll(cfg.getConfigurationSection("Players." + owner.getUniqueId() + ".Homes").getKeys(false));
-
-        for (int i = 0; i < homes.size() + 1; i++) {
-            String home = "Home" + i;
-            if (!homes.contains(home)) {
-                id = home;
-                break;
-            }
-        }
-        return id;
-    }
 
     public void create() {
 
@@ -121,6 +57,7 @@ public class Home {
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + id + ".Name", name);
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + id + ".Icon", icon);
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + id + ".Location", loc);
+        cfg.set("Players." + owner.getUniqueId() + ".Homes." + id + ".Type", getType().toString().toLowerCase());
         Main.getPlugin().saveConfig();
     }
 
@@ -130,6 +67,95 @@ public class Home {
         cfg.set("Players." + owner.getUniqueId() + ".FavoriteHomes", favorites);
         cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID(), null);
         Main.getPlugin().saveConfig();
+    }
+
+    private String findID() {
+
+        String id = "";
+        ArrayList<String> homes = new ArrayList<>();
+        if (cfg.contains("Players." + owner.getUniqueId() + ".Homes"))
+            homes.addAll(cfg.getConfigurationSection("Players." + owner.getUniqueId() + ".Homes").getKeys(false));
+
+        for (int i = 0; i < homes.size() + 1; i++) {
+            String home = "Home" + i;
+            if (!homes.contains(home)) {
+                id = home;
+                break;
+            }
+        }
+        return id;
+    }
+
+    public boolean isExisting() {
+
+        boolean isExisting = false;
+        if (cfg.contains("Players." + owner.getUniqueId() + ".Homes")) {
+            ArrayList<String> names = new ArrayList<>();
+
+            for (String id : cfg.getConfigurationSection("Players." + owner.getUniqueId() + ".Homes").getKeys(false)) {
+                names.add(cfg.getString("Players." + owner.getUniqueId() + ".Homes." + id + ".Name"));
+            }
+
+            if (names.contains(name))
+                isExisting = true;
+        }
+        return isExisting;
+    }
+
+    public void visit(Player visitor) {
+
+        visitor.teleport(getLocation());
+    }
+
+
+    public void setIcon(ItemStack icon) {
+        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Icon", icon);
+        Main.getPlugin().saveConfig();
+    }
+
+    public void setLocation(Location location) {
+        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Location", location);
+        Main.getPlugin().saveConfig();
+    }
+
+    public void setName(String name) {
+        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Name", name);
+        ArrayList<String> favorites = new ArrayList<>(cfg.getStringList("Players." + owner.getUniqueId() + ".FavoriteHomes"));
+        if (favorites.contains(this.name)) {
+            favorites.remove(this.name);
+            favorites.add(name);
+            cfg.set("Players." + owner.getUniqueId() + ".FavoriteHomes", favorites);
+        }
+        Main.getPlugin().saveConfig();
+    }
+
+    public void setType(HomeType type) {
+        String homeType = type.toString().toLowerCase();
+        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Type", homeType);
+        Main.getPlugin().saveConfig();
+    }
+
+    public void setPassword(String password) {
+        cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Password", password);
+        Main.getPlugin().saveConfig();
+    }
+
+    public void addJoinAction(JoinAction action) {
+        if (!getJoinActions().contains(action.getName())) {
+            ArrayList<String> joinActions = getJoinActions();
+            joinActions.add(action.getName());
+            cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".JoinActions", joinActions);
+            Main.getPlugin().saveConfig();
+        }
+    }
+
+    public void removeJoinAction(JoinAction action) {
+        if (getJoinActions().contains(action.getName())) {
+            ArrayList<String> joinActions = getJoinActions();
+            joinActions.remove(action.getName());
+            cfg.set("Players." + owner.getUniqueId() + ".Homes." + getID() + ".JoinActions", joinActions);
+            Main.getPlugin().saveConfig();
+        }
     }
 
 
@@ -160,12 +186,24 @@ public class Home {
         return id;
     }
 
+    public ArrayList<String> getJoinActions() {
+        return new ArrayList<>(cfg.getStringList("Players." + owner.getUniqueId() + ".Homes." + getID() + ".JoinActions"));
+    }
+
     public Location getLocation() {
         return cfg.getLocation("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Location");
     }
 
     public String getName() {
         return name;
+    }
+
+    public Player getOwner() {
+        return owner;
+    }
+
+    public String getPassword() {
+        return cfg.getString("Players." + owner.getUniqueId() + ".Homes." + getID() + ".Password");
     }
 
     public HomeType getType() {
@@ -178,5 +216,28 @@ public class Home {
             }
         }
         return type;
+    }
+
+
+    public static class JoinAction {
+
+        String name;
+        ItemStack icon;
+
+        public JoinAction(String name) {
+            this.name = name;
+        }
+
+        public void setIcon(ItemStack icon) {
+            this.icon = icon;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public ItemStack getIcon() {
+            return icon;
+        }
     }
 }

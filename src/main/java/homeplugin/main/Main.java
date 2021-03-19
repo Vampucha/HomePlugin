@@ -25,11 +25,11 @@ public class Main extends JavaPlugin {
     public static String prefix = "";
     public static String no_perm = prefix + "";
 
-    public static HashMap<Player, Integer> page = new HashMap<>();
+    public static HashMap<Player, HashMap<String, Integer>> page = new HashMap<>();
     public static HashMap<Player, String> lastGui = new HashMap<>();
-    public static HashMap<Player, ArrayList<UI.Page>> previousPage = new HashMap<>();
+    public static HashMap<Player, ArrayList<UI.Page>> pageHistory = new HashMap<>();
     public static HashMap<Player, Home> currentHome = new HashMap<>();
-    public static HashMap<Player, ArrayList<String>> search = new HashMap<>();
+    public static HashMap<Player, HashMap<String, ArrayList<String>>> search = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -98,11 +98,11 @@ public class Main extends JavaPlugin {
 
         FileConfiguration cfg = getPlugin().getConfig();
 
-        page.put(p, 1);
+        page.put(p, new HashMap<>());
         lastGui.put(p, null);
         currentHome.put(p, null);
-        search.put(p, new ArrayList<>());
-        previousPage.put(p, new ArrayList<>());
+        search.put(p, new HashMap<>());
+        pageHistory.put(p, new ArrayList<>());
 
         if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.ShowInformation")) {
             cfg.set("Players." + p.getUniqueId() + ".Settings.ShowInformation", true);
@@ -167,6 +167,17 @@ public class Main extends JavaPlugin {
 
         if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction")) {
             cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.SearchKeys.Direction", "rising");
+            getPlugin().saveConfig();
+        }
+
+        // join-actions
+        if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Type")) {
+            cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Type", "name");
+            getPlugin().saveConfig();
+        }
+
+        if (!cfg.contains("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Direction")) {
+            cfg.set("Players." + p.getUniqueId() + ".Settings.Sorting.JoinActions.Direction", "rising");
             getPlugin().saveConfig();
         }
 
